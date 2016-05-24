@@ -1,0 +1,62 @@
+
+
+table minercantile.stock
+	table minercantile.stock.items
+		items stock
+	int minercantile.stock.money 
+		money stock
+
+
+table minercantile.shop
+	function minercantile.shop.get_money()
+		return found money
+
+	function minercantile.shop.give_money(amount, bool)
+		param amount:amount of money, bool:save file
+		add money
+
+	function minercantile.shop.take_money(amount, bool)
+		param amount:amount of money, bool:save file
+		remove money
+
+
+
+files
+	minercantile_stock.txt
+		table money and items
+
+	minercantile_stock_base.txt
+		table items defined by default
+
+
+
+wallets
+	table minercantile.wallets[player]
+		int money
+		table transactions
+		
+	table minercantile.wallet	
+		function minercantile.wallet.load_wallet(name)
+			load player's money
+		
+		function minercantile.wallet.save_wallet(name)
+			save player's money
+	
+		function minercantile.wallet.get_money(name)
+			return player's money
+		
+		function minercantile.wallet.give_money(name, amount, transaction)
+			add money 
+	
+		function minercantile.wallet.take_money(name, amount, transaction)
+			remove money
+	
+		function minercantile.wallet.get_transactions(name)
+			return player's transactions
+	
+		function minercantile.add_transactions(name, new_transaction)
+			
+	
+		function minercantile.send_money(sender, receiver, amount)
+			send money from sender to receiver
+
