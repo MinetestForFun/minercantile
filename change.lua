@@ -7,7 +7,7 @@
 100 pc = 1pa, 100pa = 1po
 --]]
 
-local convertion = { ["maptools:copper_coin"] = 1, ["maptools:silver_coin"]=100, ["maptools:gold_coin"]=1000}
+local convertion = { ["maptools:copper_coin"]=1, ["maptools:silver_coin"]=9, ["maptools:gold_coin"]=81}
 
 local function get_bancomatic_formspec(pos, name)
 	local spos = pos.x .. "," .. pos.y .. "," .. pos.z
