@@ -19,5 +19,7 @@ This mod aims to make a big centralised store, under following conditions:
 
 - The shop admin can choose to keep it always opened or to close it automatically at night. 
 
+- Even the system is supposed to stay independant, the admin can add or remove money from the store for prices regulation.
+
 
 HAPPY TRADING!
