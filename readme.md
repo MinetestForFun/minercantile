@@ -2,7 +2,7 @@
 
 A minetest mod by crabman, under the original idea of Cyberpangolin
 
-PLEASE NOTE: THIS MOD (including this readme file) IS UNDER A HARD WORK AND NOT READY TO USE INGAME FOR NOw!
+PLEASE NOTE: THIS MOD (including this readme file) IS UNDER A HARD WORK AND NOT READY TO USE INGAME FOR NOW !
 
 
 
