@@ -15,7 +15,7 @@ This mod aims to make a big centralised store, under following conditions:
 
 - The shop always takes more money than gives and has limitations on how much items you can buy / sell at once to make sure you can never gain money by buying - then selling - a same ressource.
 
-- Prices are between 500 and 2 coins, on a stock range between 1 and 20000. Mith more than 10000, prices are not evolving anymore and stick at 1. The formula is *not* linear.
+- Prices are between 500 and 2 coins, on a stock range between 1 and 20000. With more than 10000, prices are not evolving anymore and stick at 1. The formula is *not* linear.
 
 - The shop admin can choose to keep it always opened or to close it automatically at night. 
 
