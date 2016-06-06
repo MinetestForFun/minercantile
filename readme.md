@@ -7,7 +7,7 @@ PLEASE NOTE: THIS MOD (including this readme file) IS UNDER A HARD WORK AND NOT 
 
 
 This mod aims to make a big centralised store, under following conditions:
-- To have money, the player has to change the coins he finds naturally ingame at the bancomatic, and then it's stored into player's wallet.
+- To have money, the player has to change the coins he finds naturally ingame at the bancomatic, and then it's stored into player's wallet. 10000 copper coin = 100 silver coins = 1 golden coin = 10000 coins in the wallet
 
 - Any ressource can be sold / bought, with an automatised way to make evolve price: a rare ressource costs lots of money, and a very frequent one becomes cheaper and cheaper.
 
@@ -15,6 +15,9 @@ This mod aims to make a big centralised store, under following conditions:
 
 - The shop always takes more money than gives and has limitations on how much items you can buy / sell at once to make sure you can never gain money by buying - then selling - a same ressource.
 
-- Prices are between 500 and 2 coins, on a stock range between 1 and 10'000. Mith more than 10'000, prices are not evolving anymore. The formula is *not* linear.
+- Prices are between 500 and 2 coins, on a stock range between 1 and 20000. Mith more than 10000, prices are not evolving anymore and stick at 1. The formula is *not* linear.
+
+- The shop admin can choose to keep it always opened or to close it automatically at night. 
+
 
 HAPPY TRADING!
