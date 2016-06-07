@@ -240,9 +240,11 @@ function minercantile.buy(name, item, nb, price)
 	end
 
 	local item_can_sell = nb
-	if items_nb/4 < nb then
-		item_can_sell = math.floor(items_nb/4)
-	end
+	if items_nb < 4 then
+  	item_can_sell = 1
+  	elseif items_nb/4 < nb then
+   	item_can_sell = math.floor(items_nb/4)
+  	end
 
 	local price_total = math.floor(item_can_sell * price)
 	local player_can_buy = item_can_sell
