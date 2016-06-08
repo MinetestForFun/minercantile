@@ -1,8 +1,9 @@
-local shop = {} --formspec temporary variables
+local shop_sell = {} --formspec temporary variables
 local shop_buy = {}
 
 minercantile.shop.max_stock = 20000 --shop don't buy infinity items
-
+--shop type, only if item name contains word
+minercantile.shop.shop_type = {"all", "3d_armor", "beds", "boats", "brick", "carts", "chest", "cobble", "dye", "doors", "farming", "food", "signs", "fishing", "glass", "decor", "mesecons", "nether", "pipeworks", "runes", "spears", "stone", "tree", "walls", "wood", "wool"}
 
 --function shop money
 function minercantile.shop.get_money()
@@ -31,11 +32,12 @@ end
 function minercantile.shop.register_items()
 	minercantile.registered_items = {}
 	for name, def in pairs(minetest.registered_items) do
-		if not def.groups.not_in_creative_inventory
+		if not name:find("maptools:") --ignore maptools
+		and not def.groups.not_in_creative_inventory
 		and not def.groups.unbreakable
 		and def.description and def.description ~= "" then
 		--and minetest.get_all_craft_recipes(name) then
-			minercantile.registered_items[name] = {groups = def.groups, desc = def.description,}
+			minercantile.registered_items[name] = {groups = def.groups, desc = def.description}
 		end
 	end
 end
@@ -87,7 +89,6 @@ function minercantile.save_stock()
 	else
 		minetest.log("error", "open(" .. minercantile.file_stock .. ", 'w') failed: " .. err)
 	end
-	minercantile.shop.set_list()
 end
 
 --function load stock items from file
@@ -103,27 +104,29 @@ function minercantile.load_stock()
 			if data.items then
 				minercantile.stock.items = table.copy(data.items)
 			end
-			minercantile.shop.set_list()
 			return
 		end
 	else
 		if minercantile.stock_base then
 			minercantile.stock.items = table.copy(minercantile.stock_base)
 		end
-		minercantile.shop.set_list()
 	end
 end
 
 --create list items for formspec (search/pages)
-function minercantile.shop.set_list()
-	local list = {}
-	for name, def in pairs(minercantile.stock.items) do
-		if minercantile.shop.is_available(name) and def.nb > 0 then
-			table.insert(list, name)
+function minercantile.shop.set_items_buy_list(name, shop_type)
+	shop_buy[name] = {page=1, search=""}
+	shop_buy[name].items_type = {}
+	for itname, def in pairs(minercantile.stock.items) do
+		if minercantile.shop.is_available(itname) and def.nb > 0 then
+			--local mod = string.split(itname, ":")[1]
+			--if shop_type == "all" or shop_type == mod then
+			if shop_type == "all" or itname:find(shop_type) then
+				table.insert(shop_buy[name].items_type, itname)
+			end
 		end
 	end
-	table.sort(list)
-	minercantile.shop.items_inventory = table.copy(list)
+	table.sort(shop_buy[name].items_type)
 end
 
 function minercantile.shop.get_nb(item)
@@ -184,14 +187,12 @@ function minercantile.shop.get_sell_price(item, wear)
 end
 
 
-
 local function set_pages_by_search(name, search)
-	shop_buy[name] = {}
 	shop_buy[name].page = 1
 	shop_buy[name].search = minetest.formspec_escape(search)
 	shop_buy[name].items_list = {}
-	for itname, def in pairs(minercantile.stock.items) do
-		if def.nb > 0 then
+	for _, itname in ipairs(shop_buy[name].items_type) do
+		if minercantile.shop.get_nb(itname) > 0 then
 			local item = minercantile.registered_items[itname]
 			if item then
 				if string.find(itname, search) or string.find(string.lower(item.desc), search) then
@@ -226,12 +227,12 @@ local function get_shop_inventory_by_page(name)
 			end
 		end
 	else
-		nb_items = #minercantile.shop.items_inventory
+		nb_items = #shop_buy[name].items_type
 		nb_pages = math.ceil(nb_items/32)
 		if page > nb_pages then page = nb_pages end
 		local index = (page*32)-32
 		for i=1, 32 do
-			local item = minercantile.shop.items_inventory[index+i]
+			local item = shop_buy[name].items_type[index+i]
 			if item then
 				local nb = minercantile.shop.get_nb(item)
 				if nb > 0 then
@@ -292,17 +293,14 @@ function minercantile.buy(name, item, nb, price)
 	minercantile.shop.give_money(sell_price, true)
 
 	minercantile.wallet.take_money(name, sell_price, " Buy "..player_can_buy .." "..item..", price "..sell_price)
-	minetest.show_formspec(name, "minercantile:confirmed", "size[6,3]bgcolor[#2A2A2A;]label[2.6,0;Shop]label[1,1;You buy "..player_can_buy .." "..item..", price "..sell_price.."$]button[1.3,2.1;1.5,1;return_buy;Return]button_exit[3.3,2.1;1.5,1;close;Close]")
+	minetest.show_formspec(name, "minercantile:confirmed", "size[6,3]bgcolor[#2A2A2A;]label[2.6,0;Shop]label[1.3,0.8;You buy "..player_can_buy .." "..item.."]label[1.3,1.3;price "..sell_price.."$]button[1.3,2.1;1.5,1;return_buy;Return]button_exit[3.3,2.1;1.5,1;close;Close]")
 	return true
 end
 
 
 local function show_formspec_to_buy(name)
 	local player = minetest.get_player_by_name(name)
-	if not player then return end
-	if not shop_buy[name] then
-		shop_buy[name] = {page=1, search=""}
-	end
+	if not player or not shop_buy[name] then return end
 	local formspec = {"size[10,10]bgcolor[#2A2A2A;]label[0,0;shop money:"..minercantile.shop.get_money().."$]label[4.4,0;Buy Items]"}
 	local inv_items = get_shop_inventory_by_page(name)
 	table.insert(formspec, "label[0,0.5;Your money:"..minercantile.wallet.get_money(name) .."$]")
@@ -341,25 +339,25 @@ end
 
 
 local function get_formspec_buy_items(name)
-	local item = shop_buy[name].item
+	local itname = shop_buy[name].item
 	local max = shop_buy[name].max
 	local nb = shop_buy[name].nb
 	local price = shop_buy[name].price
 	local formspec = {"size[8,6]bgcolor[#2A2A2A;]label[3.5,0;Buy Items]"}
-	if minetest.registered_items[item] and minetest.registered_items[item].stack_max and minetest.registered_items[item].stack_max == 1 then
+	if minetest.registered_items[itname] and minetest.registered_items[itname].stack_max and minetest.registered_items[itname].stack_max == 1 then
 		table.insert(formspec, "label[2.1,1.5;This item is being sold by 1 max]")
 	else
 		table.insert(formspec, "button[0.6,1.5;1,1;amount;-1]")
 		table.insert(formspec, "button[1.6,1.5;1,1;amount;-10]")
 		table.insert(formspec, "button[2.6,1.5;1,1;amount;-20]")
-		table.insert(formspec, "item_image_button[3.6,1.5;1,1;"..item..";buttonchoice_"..item..";"..nb.."]")
+		table.insert(formspec, "item_image_button[3.6,1.5;1,1;"..itname..";buttonchoice_"..itname..";"..nb.."]")
 		table.insert(formspec, "button[4.6,1.5;1,1;amount;+20]")
 		table.insert(formspec, "button[5.6,1.5;1,1;amount;+10]")
 		table.insert(formspec, "button[6.6,1.5;1,1;amount;+1]")
 	end
-	table.insert(formspec, "label[3.5,2.7;Price:"..price.."$]")
-	table.insert(formspec, "label[3.5,3.1;Amount:".. nb.." items]")
-	table.insert(formspec, "label[3.5,3.5;Total:"..nb * price.."$]")
+	table.insert(formspec, "label[3.2,2.7;Price:"..price.."$]")
+	table.insert(formspec, "label[3.2,3.1;Amount:".. nb.." items]")
+	table.insert(formspec, "label[3.2,3.5;Total:"..nb * price.."$]")
 	table.insert(formspec, "button[3.3,5;1.5,1;confirm;Confirm]")
 	table.insert(formspec, "button[0,0;1.5,1;abort;Return]")
 	return table.concat(formspec)
@@ -377,10 +375,10 @@ function minercantile.shop.player_sell(name)
 		minetest.show_formspec(name, "minercantile:confirmed", "size[6,3]bgcolor[#2A2A2A;]label[2.6,0;Shop]label[1,1;Sorry, shop have not enough money]button[1.3,2.1;1.5,1;return_sell;Return]button_exit[3.3,2.1;1.5,1;close;Close]")
 		return false
 	end
-	local item = shop[name].item
+	local item = shop_sell[name].item
 	local index = item.index
-	local nb = shop[name].nb
-	local price = shop[name].price
+	local nb = shop_sell[name].nb
+	local price = shop_sell[name].price
 	local stack = player_inv:get_stack("main", index)
 	local itname = stack:get_name()
 	local items_nb = stack:get_count()
@@ -422,12 +420,9 @@ function minercantile.shop.player_sell(name)
 	minercantile.shop.take_money(sell_price, true)
 
 	minercantile.wallet.give_money(name, sell_price, " Sell "..shop_can_buy .." "..itname..", price "..sell_price)
-	minetest.show_formspec(name, "minercantile:confirmed", "size[6,3]bgcolor[#2A2A2A;]label[2.6,0;Shop]label[1,1;You sell "..shop_can_buy .." "..itname..", price "..sell_price.."$]button[1.3,2.1;1.5,1;return_sell;Return]button_exit[3.3,2.1;1.5,1;close;Close]")
+	minetest.show_formspec(name, "minercantile:confirmed", "size[6,3]bgcolor[#2A2A2A;]label[2.6,0;Shop]label[1.3,0.8;You sell "..shop_can_buy .." "..itname.."]label[1.3,1.3;price "..sell_price.."$]button[1.3,2.1;1.5,1;return_sell;Return]button_exit[3.3,2.1;1.5,1;close;Close]")
 	return true
 end
-
-
-
 
 
 -- show sell formspec
@@ -438,8 +433,8 @@ local function show_formspec_to_sell(name)
 	table.insert(formspec, "label[0,0;shop money:"..minercantile.shop.get_money().."$]")
 	table.insert(formspec, "label[0,0.5;Your money:"..minercantile.wallet.get_money(name) .."$]")
 	local player_inv = player:get_inventory()
-	shop[name] = {}
-	shop[name].items = {}
+	shop_sell[name] = {}
+	shop_sell[name].items = {}
 	for i=1, player_inv:get_size("main") do
 		local stack = player_inv:get_stack("main", i)
 		if not stack:is_empty() and minercantile.shop.is_available(stack:get_name()) then
@@ -448,7 +443,7 @@ local function show_formspec_to_sell(name)
 			local wear = stack:get_wear()
 			local price = minercantile.shop.get_sell_price(itname, wear)
 			if price and price > 0 then
-				table.insert(shop[name].items, {name=itname, nb=nb, price=price, index=i, wear=wear})
+				table.insert(shop_sell[name].items, {name=itname, nb=nb, price=price, index=i, wear=wear})
 			end
 		end
 	end
@@ -456,7 +451,7 @@ local function show_formspec_to_sell(name)
 	local x = 0.2
 	local y = 1
 	for i=1, 32 do
-		local item = shop[name].items[i]
+		local item = shop_sell[name].items[i]
 		if item then
 			table.insert(formspec, "item_image_button["..x..","..y..";1,1;"..tostring(item.name)..";buttonchoice_"..tostring(i)..";"..item.nb.."]")
 			table.insert(formspec, "label["..(x)..","..(y+0.8)..";"..item.price.."$]")
@@ -475,26 +470,30 @@ end
 
 
 local function get_formspec_sell_items(name)
-	local item = shop[name].item
-
-	local index = shop[name].index
-	local max = shop[name].max
-	local nb = shop[name].nb
-	local price = minercantile.shop.get_sell_price(item.name, item.wear)
-	shop[name].price = price
+	local item = shop_sell[name].item
+	local itname = item.name
+	local index = shop_sell[name].index
+	local max = shop_sell[name].max
+	local nb = shop_sell[name].nb
+	local price = minercantile.shop.get_sell_price(itname, item.wear)
+	shop_sell[name].price = price
 	local formspec = {"size[8,6]bgcolor[#2A2A2A;]label[3.5,0;Sell Items]"}
+	if minetest.registered_items[itname] and minetest.registered_items[itname].stack_max and minetest.registered_items[itname].stack_max == 1 then
+		table.insert(formspec, "label[2.1,1.5;This item is being sold by 1 max]")
+	else
+		table.insert(formspec, "button[0.6,1.5;1,1;amount;-1]")
+		table.insert(formspec, "button[1.6,1.5;1,1;amount;-10]")
+		table.insert(formspec, "button[2.6,1.5;1,1;amount;-20]")
+		table.insert(formspec, "item_image_button[3.6,1.5;1,1;"..itname..";buttonchoice_"..index..";"..nb.."]")
+		table.insert(formspec, "button[4.6,1.5;1,1;amount;+20]")
+		table.insert(formspec, "button[5.6,1.5;1,1;amount;+10]")
+		table.insert(formspec, "button[6.6,1.5;1,1;amount;+1]")
+	end
 
-	table.insert(formspec, "button[0.6,2;1,1;amount;-1]")
-	table.insert(formspec, "button[1.6,2;1,1;amount;-10]")
-	table.insert(formspec, "button[2.6,2;1,1;amount;-20]")
-	--table.insert(formspec, "label[3.7,5.2;"..tostring(nb).."]")
-	table.insert(formspec, "item_image_button[3.6,2;1,1;"..item.name..";buttonchoice_"..index..";"..nb.."]")
-	table.insert(formspec, "button[4.6,2;1,1;amount;+20]")
-	table.insert(formspec, "button[5.6,2;1,1;amount;+10]")
-	table.insert(formspec, "button[6.6,2;1,1;amount;+1]")
-
-	table.insert(formspec, "label[3,3;sell ".. nb.."x"..price.."="..nb * price.."]")
-	table.insert(formspec, "button[3.3,4;1.5,1;confirm;Confirm]")
+	table.insert(formspec, "label[3.2,2.7;Price:"..price.."$]")
+	table.insert(formspec, "label[3.2,3.1;Amount:".. nb.." items]")
+	table.insert(formspec, "label[3.2,3.5;Total:"..nb * price.."$]")
+	table.insert(formspec, "button[3.3,5;1.5,1;confirm;Confirm]")
 	table.insert(formspec, "button[0,0;1.5,1;abort;Return]")
 	return table.concat(formspec)
 end
@@ -508,31 +507,34 @@ local function get_formspec_welcome(name)
 	return table.concat(formspec)
 end
 
-
+-- formspec admin shop
 function minercantile.get_formspec_shop_admin_shop(pos, node_name, name)
-	if not shop[name] then
-		shop[name]  = {}
+	if not shop_sell[name] then
+		shop_sell[name]  = {}
 	end
-	shop[name].pos = pos
-	shop[name].node_name = node_name
+	shop_sell[name].pos = pos
+	shop_sell[name].node_name = node_name
 
 	local formspec = {"size[6,6]bgcolor[#2A2A2A;]label[2.2,0;Shop Admin]button[4.5,0;1.5,1;shop;Shop]"}
 	local isnode = minetest.get_node_or_nil(pos)
 	if not isnode or isnode.name ~= node_name then return end
 	local meta = minetest.get_meta(pos)
+	local shop_type = meta:get_int("shop_type") or 1
+	table.insert(formspec, "label[1,1;Shop Type:]")
+	table.insert(formspec, "dropdown[3,1;3,1;select_type;"..table.concat(minercantile.shop.shop_type, ",")..";"..shop_type.."]")
 
 	local isopen = meta:get_int("open") or 0
 	if isopen == 1 then
-		table.insert(formspec, "label[1,1;Is Open: Yes]button[3.5,0.8;1.5,1;open_close;No]")
+		table.insert(formspec, "label[1,2;Is Open: Yes]button[3.5,1.8;1.5,1;open_close;No]")
 	else
-		table.insert(formspec, "label[1,1;Is Open: No]button[3.5,0.8;1.5,1;open_close;Yes]")
+		table.insert(formspec, "label[1,2;Is Open: No]button[3.5,1.8;1.5,1;open_close;Yes]")
 	end
 
 	local always_open = meta:get_int("always_open") or 0
 	if always_open == 1 then
-		table.insert(formspec, "label[1,2;Open 24/24: Yes]button[3.5,1.8;1.5,1;always_open;No]")
+		table.insert(formspec, "label[1,3;Open 24/24: Yes]button[3.5,2.8;1.5,1;always_open;No]")
 	else
-		table.insert(formspec, "label[1,2;Open 24/24: No]button[3.5,1.8;1.5,1;always_open;Yes]")
+		table.insert(formspec, "label[1,3;Open 24/24: No]button[3.5,2.8;1.5,1;always_open;Yes]")
 	end
 
 	table.insert(formspec, "button_exit[2.4,5.3;1.5,1;close;Close]")
@@ -555,21 +557,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	elseif formname == "minercantile:shop_buy" then
 		for b, n in pairs(fields) do
 			if string.find(b, "buttonchoice_") then
-				if not shop_buy[name] then
-					shop_buy[name] = {}
-				end
+				if not shop_buy[name] then return end
 				local item = string.sub(b, 14)
 				shop_buy[name].item = item
 				shop_buy[name].max = tonumber(n)
 				shop_buy[name].nb = 1
-				--shop_buy[name].price = shop_buy[name].items[shop_buy[name].item].price
 				shop_buy[name].price = minercantile.shop.get_buy_price(item)
 				minetest.show_formspec(name, "minercantile:shop_buy_items",  get_formspec_buy_items(name))
 				return
 			end
 		end
-
-
 		if fields["quit"] then
 			return
 		elseif fields["searchbutton"] then
@@ -614,18 +611,18 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	elseif formname == "minercantile:shop_sell" then
 		for b, n in pairs(fields) do
 			if string.find(b, "buttonchoice_") then
-				if not shop[name] then
-					shop[name] = {}
+				if not shop_sell[name] then
+					shop_sell[name] = {}
 				end
 				local index = tonumber(string.sub(b, 14))
-				shop[name].index = index
-				local item = shop[name].items[index]
-				shop[name].item = item
-				shop[name].itname = item.name
-				shop[name].max = item.nb
-				shop[name].wear = item.wear
-				shop[name].nb = 1
-				shop[name].price = minercantile.shop.get_sell_price(item.name, item.wear)
+				shop_sell[name].index = index
+				local item = shop_sell[name].items[index]
+				shop_sell[name].item = item
+				shop_sell[name].itname = item.name
+				shop_sell[name].max = item.nb
+				shop_sell[name].wear = item.wear
+				shop_sell[name].nb = 1
+				shop_sell[name].price = minercantile.shop.get_sell_price(item.name, item.wear)
 				minetest.show_formspec(name, "minercantile:shop_sell_items",  get_formspec_sell_items(name))
 				break
 			end
@@ -635,16 +632,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		if fields["amount"] then
 			local inc = tonumber(fields["amount"])
 			if inc ~= nil then
-				shop[name].nb = shop[name].nb + inc
+				shop_sell[name].nb = shop_sell[name].nb + inc
 			end
-			if shop[name].nb > shop[name].max then
-				 shop[name].nb = shop[name].max
+			if shop_sell[name].nb > shop_sell[name].max then
+				 shop_sell[name].nb = shop_sell[name].max
 			end
-			if shop[name].nb > 99 then
-				shop[name].nb = 99
+			if shop_sell[name].nb > 99 then
+				shop_sell[name].nb = 99
 			end
-			if shop[name].nb < 1 then
-				 shop[name].nb = 1
+			if shop_sell[name].nb < 1 then
+				 shop_sell[name].nb = 1
 			end
 		elseif fields["abort"] then
 			show_formspec_to_sell(name)
@@ -653,7 +650,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			minercantile.shop.player_sell(name)
 			return
 		elseif fields["quit"] then
-			shop[name] = nil
+			shop_sell[name] = nil
 			return
 		end
 		minetest.show_formspec(name, "minercantile:shop_sell_items",  get_formspec_sell_items(name))
@@ -663,16 +660,18 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		elseif fields["return_buy"] then
 			show_formspec_to_buy(name)
 		end
+	-- admin conf
 	elseif formname == "minercantile:shop_admin_shop" then
 		if fields["quit"] then
-			shop[name] = nil
+			shop_sell[name] = nil
+			shop_buy[name] = nil
 			return
 		elseif fields["shop"] then
 			minetest.show_formspec(name, "minercantile:shop_welcome",  get_formspec_welcome(name))
 			return
 		end
-		local pos = shop[name].pos
-		local node_name = shop[name].node_name
+		local pos = shop_sell[name].pos
+		local node_name = shop_sell[name].node_name
 		local isnode = minetest.get_node_or_nil(pos)
 		if not isnode or isnode.name ~= node_name then return end --FIXME
 		local meta = minetest.get_meta(pos)
@@ -689,6 +688,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				always_open = 1
 			end
 			meta:set_int("always_open", always_open)
+		elseif fields["select_type"] then
+			for i, n in pairs(minercantile.shop.shop_type) do
+				if n == fields["select_type"] then
+					meta:set_int("shop_type", i)
+					break
+				end
+			end
 		end
 		minetest.show_formspec(name, "minercantile:shop_admin_shop",  minercantile.get_formspec_shop_admin_shop(pos, node_name, name))
 	end
@@ -710,6 +716,7 @@ minetest.register_node("minercantile:shop", {
 		meta:set_string("infotext", "Barter Shop")
 		meta:set_int("open", 0)
 		meta:set_int("always_open", 0)
+		meta:set_int("shop_type", 1)
 	end,
 	can_dig = function(pos, player)
 		local name = player:get_player_name()
@@ -718,10 +725,12 @@ minetest.register_node("minercantile:shop", {
 	on_rightclick = function(pos, node, player, itemstack, pointed_thing)
 		local name = player:get_player_name()
 		if not name or name == "" then return end
+		local meta = minetest.get_meta(pos)
+		local shop_type = minercantile.shop.shop_type[meta:get_int("shop_type") or 1]
+		minercantile.shop.set_items_buy_list(name, shop_type)
 		if minetest.check_player_privs(name, {protection_bypass = true}) or minetest.check_player_privs(name, {server = true}) then
 			minetest.show_formspec(name, "minercantile:shop_admin_shop",  minercantile.get_formspec_shop_admin_shop(pos, node.name, name))
 		else
-			local meta = minetest.get_meta(pos)
 			local isopen = meta:get_int("open")
 			if (isopen and isopen == 1) then
 				local always_open = meta:get_int("always_open")
@@ -739,21 +748,12 @@ minetest.register_node("minercantile:shop", {
 })
 
 
---nodes
-minetest.register_craft({
-	output = "minercantile:shop",
-	recipe = {
-		{"default:wood", "default:wood", "default:wood"}, --FIXME find a free/better craft
-		{"default:wood", "default:mese", "default:wood"},
-		{"default:wood", "default:wood", "default:wood"},
-	},
-})
-
 minetest.register_chatcommand("shop_addmoney",{
 	params = "money",
 	description = "give money to the shop",
 	privs = {server = true},
 	func = function(name, param)
+		param = string.gsub(param, " ", "")
 		local amount = tonumber(param)
 		if amount == nil then
 			minetest.chat_send_player(name, "invalid, you must add amount at param")
@@ -769,6 +769,7 @@ minetest.register_chatcommand("shop_delmoney",{
 	description = "del money to the shop",
 	privs = {server = true},
 	func = function(name, param)
+		param = string.gsub(param, " ", "")
 		local amount = tonumber(param)
 		if (amount  == nil ) then
 			minetest.chat_send_player(name, "invalid, you must add amount at param")
