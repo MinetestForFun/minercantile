@@ -481,11 +481,11 @@ local function show_formspec_to_sell(name)
 		local item = shop_sell[name].items[i]
 		if item then
 			table.insert(formspec, "item_image_button["..x..","..y..";1,1;"..item.name..";buttonchoice_"..i..";"..item.nb.."]")
-			table.insert(formspec, "label["..(x)..","..(y+0.8)..";"..item.price.."$]")
+			table.insert(formspec, "label["..(x)..","..(y+0.9)..";"..item.price.."$]")
 			if item.wear and item.wear > 0 then
 				local img = get_wear_img(item.wear)
 				if img then
-					table.insert(formspec, "image["..x..","..y..";1,1;"..img.."]")
+					table.insert(formspec, "image["..x..","..(y+0.1)..";1,1;"..img.."]")
 				end
 			end
 		else
@@ -517,7 +517,7 @@ local function get_formspec_sell_items(name)
 	if item.wear and item.wear > 0 then
 		local img = get_wear_img(item.wear)
 		if img then
-			table.insert(formspec, "image[3.6,1.5;1,1;"..img.."]")
+			table.insert(formspec, "image[3.6,1.6;1,1;"..img.."]")
 		end
 	end
 
