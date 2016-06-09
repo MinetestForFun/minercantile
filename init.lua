@@ -13,7 +13,9 @@ minercantile.stock = {} -- table saved money, items list
 minercantile.shop = {}
 minercantile.shop.items_inventory = {}
 minercantile.stock.items = {}
-minercantile.stock.money = 100000
+minercantile.stock.money = 800000
+minercantile.stock.transac_b = 0
+minercantile.stock.transac_s = 0
 
 --functions specific to wallet
 minercantile.wallet = {}
