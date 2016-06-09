@@ -129,10 +129,10 @@ function minercantile.load_stock()
 				minercantile.stock.items = table.copy(data.items)
 			end
 			if data.transac_b then
-				minercantile.stock.transac_b = table.copy(data.transac_b)
+				minercantile.stock.transac_b = data.transac_b
 			end
 			if data.transac_s then
-				minercantile.stock.transac_s = table.copy(data.transac_s)
+				minercantile.stock.transac_s = data.transac_s
 			end
 			return
 		end
