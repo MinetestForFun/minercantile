@@ -203,7 +203,7 @@ function minercantile.shop.get_sell_price(itname, wear)
 	if minercantile.stock.items[itname].price ~= nil then -- if defined price
 		price = math.floor(minercantile.stock.items[itname].price)
 	else
-		price = math.floor((money/10)/(math.log(nb+2000+99)*10)*1000000/(math.pow((nb+2000+99),(2.01))))
+		price = math.floor(((money/10)/(math.log(nb+2000+99)*10)*1000000/(math.pow((nb+2000+99),(2.01))))+0.5)
 	end
 
 	if wear and wear > 0 then --calcul price with % wear, (0-65535)
