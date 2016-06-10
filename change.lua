@@ -1,13 +1,35 @@
 
---[[
-"maptools:copper_coin"
-"maptools:silver_coin"
-"maptools:gold_coin"
 
-100 pc = 1pa, 100pa = 1po
---]]
+local convertion = { ["minercantile:copper_coin"]=1, ["minercantile:silver_coin"]=100, ["minercantile:gold_coin"]=10000}
 
-local convertion = { ["maptools:copper_coin"]=1, ["maptools:silver_coin"]=100, ["maptools:gold_coin"]=10000}
+minetest.register_craftitem("minercantile:copper_coin", {
+	description = "Copper Coin",
+	inventory_image = "minercantile_copper_coin.png",
+	wield_scale = {x = 0.5, y = 0.5, z = 0.25},
+	stack_max = 10000,
+	groups = {not_in_creative_inventory = 0},
+})
+
+minetest.register_craftitem("minercantile:silver_coin", {
+	description = "Silver Coin",
+	inventory_image = "minercantile_silver_coin.png",
+	wield_scale = {x = 0.5, y = 0.5, z = 0.25},
+	stack_max = 10000,
+	groups = {not_in_creative_inventory = 0},
+})
+
+minetest.register_craftitem("minercantile:gold_coin", {
+	description = "Gold Coin",
+	inventory_image = "minercantile_gold_coin.png",
+	wield_scale = {x = 0.5, y = 0.5, z = 0.25},
+	stack_max = 10000,
+	groups = {not_in_creative_inventory = 0},
+})
+
+
+minetest.register_alias("maptools:copper_coin", "minercantile:copper_coin")
+minetest.register_alias("maptools:silver_coin", "minercantile:silver_coin")
+minetest.register_alias("maptools:gold_coin", "minercantile:gold_coin")
 
 local function get_bancomatic_formspec(pos, name)
 	local spos = pos.x .. "," .. pos.y .. "," .. pos.z
@@ -16,12 +38,12 @@ local function get_bancomatic_formspec(pos, name)
 		"label[0,0;Your money:"..minercantile.wallet.get_money(name).."$]" ..
 		"label[2,1;Put your coins to convert on your wallet]" ..
 		
-		"image[0,1.5;1,1;maptools_gold_coin.png]" ..
-		"label[1,1.7;= "..convertion["maptools:gold_coin"].."$]" ..
-		"image[0,2.5;1,1;maptools_silver_coin.png]" ..
-		"label[1,2.7;= "..convertion["maptools:silver_coin"].."$]" ..
-		"image[0,3.5;1,1;maptools_copper_coin.png]" ..
-		"label[1,3.7;= "..convertion["maptools:copper_coin"].."$]" ..
+		"image[0,1.5;1,1;minercantile_gold_coin.png]" ..
+		"label[1,1.7;= "..convertion["minercantile:gold_coin"].."$]" ..
+		"image[0,2.5;1,1;minercantile_silver_coin.png]" ..
+		"label[1,2.7;= "..convertion["minercantile:silver_coin"].."$]" ..
+		"image[0,3.5;1,1;minercantile_copper_coin.png]" ..
+		"label[1,3.7;= "..convertion["minercantile:copper_coin"].."$]" ..
 		
 		"list[nodemeta:" .. spos .. ";main;3.5,2.5;1,1;]" ..
 		"list[current_player;main;0,4.85;8,1;]" ..
@@ -31,7 +53,6 @@ local function get_bancomatic_formspec(pos, name)
 		--default.get_hotbar_bg(0,4.85)
 	return formspec
 end
-
 
 
 --change money.
@@ -58,7 +79,7 @@ minetest.register_node("minercantile:bancomatic", {
 		local inv = meta:get_inventory()
 		inv:set_size("main", 1 * 1)
 	end,
-	can_dig = function(pos,player)
+	can_dig = function(pos, player)
 		local name = player:get_player_name()
 		return (minetest.check_player_privs(name, {protection_bypass = true}) or minetest.check_player_privs(name, {server = true}))
 	end,
@@ -67,7 +88,7 @@ minetest.register_node("minercantile:bancomatic", {
 	end,
     allow_metadata_inventory_put = function(pos, listname, index, stack, player)
 		local item = stack:get_name()
-		if item == "maptools:copper_coin" or item == "maptools:silver_coin" or item == "maptools:gold_coin" then
+		if item == "minercantile:copper_coin" or item == "minercantile:silver_coin" or item == "minercantile:gold_coin" then
 			return stack:get_count()
 		end
 		return 0
@@ -77,7 +98,7 @@ minetest.register_node("minercantile:bancomatic", {
 	end,
     on_metadata_inventory_put = function(pos, listname, index, stack, player)
 		local item = stack:get_name()
-		if item == "maptools:copper_coin" or item == "maptools:silver_coin" or item == "maptools:gold_coin" then
+		if item == "minercantile:copper_coin" or item == "minercantile:silver_coin" or item == "minercantile:gold_coin" then
 			local name = player:get_player_name()
 			local meta = minetest.get_meta(pos)
 			local inv = meta:get_inventory()

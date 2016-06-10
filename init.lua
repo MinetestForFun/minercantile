@@ -13,7 +13,7 @@ minercantile.stock = {} -- table saved money, items list
 minercantile.shop = {}
 minercantile.shop.items_inventory = {}
 minercantile.stock.items = {}
-minercantile.stock.money = 800000
+minercantile.stock.money = 8000
 minercantile.stock.transac_b = 0
 minercantile.stock.transac_s = 0
 
@@ -28,7 +28,6 @@ dofile(minetest.get_modpath("minercantile") .. "/change.lua")
 dofile(minetest.get_modpath("minercantile") .. "/shop.lua")
 
 
-
 --load items base and available
 minercantile.load_stock_base()
 minetest.after(1, function()
@@ -36,4 +35,5 @@ minetest.after(1, function()
 		minercantile.load_stock()
 	end
 )
+
 minetest.log("action", "[minercantile] Loaded")

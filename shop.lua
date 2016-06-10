@@ -28,9 +28,9 @@ function minercantile.shop.give_money(money, saving)
 	end
 end
 
-function minercantile.shop.get_nb(item)
-	if minercantile.stock.items[item] then
-		return minercantile.stock.items[item].nb
+function minercantile.shop.get_nb(itname)
+	if minercantile.stock.items[itname] then
+		return minercantile.stock.items[itname].nb
 	end
 	return 0
 end
@@ -52,16 +52,16 @@ function minercantile.shop.set_transac_s()
 	minercantile.stock.transac_s = minercantile.stock.transac_s + 1
 end
 
-function minercantile.shop.is_available(item)
-	if minercantile.registered_items[item] then
+function minercantile.shop.is_available(itname)
+	if minercantile.registered_items[itname] then
 		return true
 	end
 	return false
 end
 
-function minercantile.shop.get_item_def(item)
-	if minercantile.registered_items[item] then
-		return minercantile.registered_items[item]
+function minercantile.shop.get_item_def(itname)
+	if minercantile.registered_items[itname] then
+		return minercantile.registered_items[itname]
 	end
 	return nil
 end
@@ -100,6 +100,14 @@ function minercantile.load_stock_base()
 		file:close()
 		if data and type(data) == "table" then
 			minercantile.stock_base = table.copy(data)
+			if minercantile.stock_base.money then
+				minercantile.stock.money = minercantile.stock_base.money
+			end			
+			if minercantile.stock_base.items then
+				for itname, def in pairs(minercantile.stock_base.items) do
+					minercantile.stock.items[itname] = table.copy(def)
+				end
+			end
 		end
 	end
 end
@@ -126,7 +134,9 @@ function minercantile.load_stock()
 				minercantile.stock.money = data.money
 			end
 			if data.items then
-				minercantile.stock.items = table.copy(data.items)
+				for itname, def in pairs(data.items) do
+					minercantile.stock.items[itname] = table.copy(def)
+				end
 			end
 			if data.transac_b then
 				minercantile.stock.transac_b = data.transac_b
@@ -134,11 +144,6 @@ function minercantile.load_stock()
 			if data.transac_s then
 				minercantile.stock.transac_s = data.transac_s
 			end
-			return
-		end
-	else
-		if minercantile.stock_base then
-			minercantile.stock.items = table.copy(minercantile.stock_base)
 		end
 	end
 end
@@ -161,19 +166,19 @@ end
 
 
 -- sell fonction
-function minercantile.shop.get_buy_price(item)
-	if item == "maptools:copper_coin" or item == "maptools:silver_coin" or item == "maptools:gold_coin" then -- dont's buy/sell coins
+function minercantile.shop.get_buy_price(itname)
+	if itname == "minercantile:copper_coin" or itname == "minercantile:silver_coin" or itname == "minercantile:gold_coin" then -- dont's buy/sell coins
 		return nil
 	end
 	local price = nil
 	local money = minercantile.shop.get_money()
-	if not minercantile.stock.items[item] then
-		minercantile.stock.items[item] = {nb=math.random(500, 1000)}
+	if not minercantile.stock.items[itname] then
+		minercantile.stock.items[itname] = {nb=0}
 	end
 
-	local nb = minercantile.stock.items[item].nb
-	if minercantile.stock.items[item].price ~= nil then -- if defined price
-		price = math.ceil(minercantile.stock.items[item].price)
+	local nb = minercantile.stock.items[itname].nb
+	if minercantile.stock.items[itname].price ~= nil then -- if defined price
+		price = math.ceil(minercantile.stock.items[itname].price)
 	else
 		price = math.ceil((money/10)/(math.log(nb+2000-99)*10)*1000000/(math.pow((nb+2000-99),(2.01))))
 	end
@@ -183,20 +188,20 @@ end
 
 
 -- sell fonction
-function minercantile.shop.get_sell_price(item, wear)
-	if item == "maptools:copper_coin" or item == "maptools:silver_coin" or item == "maptools:gold_coin" then -- dont's buy/sell coins
+function minercantile.shop.get_sell_price(itname, wear)
+	if itname == "minercantile:copper_coin" or itname == "minercantile:silver_coin" or itname == "minercantile:gold_coin" then -- dont's buy/sell coins
 		return nil
 	end
 	local price = nil
 	local money = minercantile.shop.get_money()
-	if not minercantile.stock.items[item] then
-		minercantile.stock.items[item] = {nb=0}
+	if not minercantile.stock.items[itname] then
+		minercantile.stock.items[itname] = {nb=0}
 	end
 
-	local nb = minercantile.stock.items[item].nb
+	local nb = minercantile.stock.items[itname].nb
 
-	if minercantile.stock.items[item].price ~= nil then -- if defined price
-		price = math.floor(minercantile.stock.items[item].price)
+	if minercantile.stock.items[itname].price ~= nil then -- if defined price
+		price = math.floor(minercantile.stock.items[itname].price)
 	else
 		price = math.floor((money/10)/(math.log(nb+2000+99)*10)*1000000/(math.pow((nb+2000+99),(2.01))))
 	end
@@ -240,13 +245,13 @@ local function get_shop_inventory_by_page(name)
 		if page > nb_pages then page = nb_pages end
 		local index = (page*32)-32
 		for i=1, 32 do
-			local item = shop_buy[name].items_list[index+i]
-			if not item then break end
-			local nb = minercantile.shop.get_nb(item)
+			local itname = shop_buy[name].items_list[index+i]
+			if not itname then break end
+			local nb = minercantile.shop.get_nb(itname)
 			if nb > 0 then
-				local price = minercantile.shop.get_buy_price(item)
+				local price = minercantile.shop.get_buy_price(itname)
 				if price and price > 0 then
-					table.insert(inv_list, {name=item, nb=nb, price=price})
+					table.insert(inv_list, {name=itname, nb=nb, price=price})
 				end
 			end
 		end
@@ -256,13 +261,13 @@ local function get_shop_inventory_by_page(name)
 		if page > nb_pages then page = nb_pages end
 		local index = (page*32)-32
 		for i=1, 32 do
-			local item = shop_buy[name].items_type[index+i]
-			if item then
-				local nb = minercantile.shop.get_nb(item)
+			local itname = shop_buy[name].items_type[index+i]
+			if itname then
+				local nb = minercantile.shop.get_nb(itname)
 				if nb > 0 then
-					local price = minercantile.shop.get_buy_price(item)
+					local price = minercantile.shop.get_buy_price(itname)
 					if price and price > 0 then
-						table.insert(inv_list, {name=item,nb=nb,price=price})
+						table.insert(inv_list, {name=itname,nb=nb,price=price})
 					end
 				end
 			end
@@ -274,7 +279,7 @@ end
 
 
 --buy
-function minercantile.shop.buy(name, item, nb, price)
+function minercantile.shop.buy(name, itname, nb, price)
 	local player = minetest.get_player_by_name(name)
 	if not player then return false end
 	local player_inv = player:get_inventory()
@@ -285,9 +290,9 @@ function minercantile.shop.buy(name, item, nb, price)
 		return false
 	end
 
-	local items_nb = minercantile.stock.items[item].nb
+	local items_nb = minercantile.stock.items[itname].nb
 	if items_nb < 1 then
-		minetest.show_formspec(name, "minercantile:confirmed", "size[6,3]bgcolor[#2A2A2A;]label[2.6,0;Shop]label[1,1;Sorry, shop have 0 item ".. item.."]button[1.3,2.1;1.5,1;return_buy;Return]button_exit[3.3,2.1;1.5,1;close;Close]")
+		minetest.show_formspec(name, "minercantile:confirmed", "size[6,3]bgcolor[#2A2A2A;]label[2.6,0;Shop]label[1,1;Sorry, shop have 0 item ".. itname.."]button[1.3,2.1;1.5,1;return_buy;Return]button_exit[3.3,2.1;1.5,1;close;Close]")
 		return false
 	end
 
@@ -305,20 +310,20 @@ function minercantile.shop.buy(name, item, nb, price)
 	end
 
 	local sell_price = player_can_buy * price
-	local stack = ItemStack(item.." "..player_can_buy)
+	local stack = ItemStack(itname.." "..player_can_buy)
 	--player_inv:room_for_item("main", stack)
 	local nn = player_inv:add_item("main", stack)
 	local count = nn:get_count()
 	if count > 0 then
-		minetest.spawn_item(player:getpos(), {name=item, count=count, wear=0, metadata=""})
+		minetest.spawn_item(player:getpos(), {name=itname, count=count, wear=0, metadata=""})
 	end
 
-	minercantile.stock.items[item].nb = minercantile.stock.items[item].nb - player_can_buy
+	minercantile.stock.items[itname].nb = minercantile.stock.items[itname].nb - player_can_buy
 	minercantile.shop.set_transac_b()
 	minercantile.shop.give_money(sell_price, true)
 
-	minercantile.wallet.take_money(name, sell_price, " Buy "..player_can_buy .." "..item..", price "..sell_price)
-	minetest.show_formspec(name, "minercantile:confirmed", "size[6,3]bgcolor[#2A2A2A;]label[2.6,0;Shop]label[1.3,0.8;You buy "..player_can_buy .." "..item.."]label[1.3,1.3;price "..sell_price.."$]button[1.3,2.1;1.5,1;return_buy;Return]button_exit[3.3,2.1;1.5,1;close;Close]")
+	minercantile.wallet.take_money(name, sell_price, " Buy "..player_can_buy .." "..itname..", price "..sell_price)
+	minetest.show_formspec(name, "minercantile:confirmed", "size[6,3]bgcolor[#2A2A2A;]label[2.6,0;Shop]label[1.3,0.8;You buy "..player_can_buy .." "..itname.."]label[1.3,1.3;price "..sell_price.."$]button[1.3,2.1;1.5,1;return_buy;Return]button_exit[3.3,2.1;1.5,1;close;Close]")
 	return true
 end
 
@@ -363,7 +368,7 @@ end
 
 
 local function get_formspec_buy_items(name)
-	local itname = shop_buy[name].item
+	local itname = shop_buy[name].itname
 	local max = shop_buy[name].max
 	local nb = shop_buy[name].nb
 	local price = shop_buy[name].price
@@ -563,18 +568,18 @@ function minercantile.get_formspec_shop_admin_shop(pos, node_name, name)
 	local isnode = minetest.get_node_or_nil(pos)
 	if not isnode or isnode.name ~= node_name then return end
 	local meta = minetest.get_meta(pos)
-	local shop_type = meta:get_int("shop_type") or 1
+	local shop_type = meta:get_int("shop_type")
 	table.insert(formspec, "label[1,1;Shop Type:]")
 	table.insert(formspec, "dropdown[3,1;3,1;select_type;"..table.concat(minercantile.shop.shop_type, ",")..";"..shop_type.."]")
 
-	local isopen = meta:get_int("open") or 0
+	local isopen = meta:get_int("open")
 	if isopen == 1 then
 		table.insert(formspec, "label[1,2;Is Open: Yes]button[3.5,1.8;1.5,1;open_close;No]")
 	else
 		table.insert(formspec, "label[1,2;Is Open: No]button[3.5,1.8;1.5,1;open_close;Yes]")
 	end
 
-	local always_open = meta:get_int("always_open") or 0
+	local always_open = meta:get_int("always_open")
 	if always_open == 1 then
 		table.insert(formspec, "label[1,3;Open 24/24: Yes]button[3.5,2.8;1.5,1;always_open;No]")
 	else
@@ -602,11 +607,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		for b, n in pairs(fields) do
 			if string.find(b, "buttonchoice_") then
 				if not shop_buy[name] then return end
-				local item = string.sub(b, 14)
-				shop_buy[name].item = item
-				shop_buy[name].max = tonumber(n)/4
+				local itname = string.sub(b, 14)
+				shop_buy[name].itname = itname
+				shop_buy[name].max = math.floor(minercantile.shop.get_nb(itname)/4)
 				shop_buy[name].nb = 1
-				shop_buy[name].price = minercantile.shop.get_buy_price(item)
+				shop_buy[name].price = minercantile.shop.get_buy_price(itname)
 				minetest.show_formspec(name, "minercantile:shop_buy_items",  get_formspec_buy_items(name))
 				return
 			end
@@ -634,7 +639,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			end
 			if shop_buy[name].nb > 99 then
 				shop_buy[name].nb = 99
-			end			
+			end
 			if shop_buy[name].nb > shop_buy[name].max then
 				 shop_buy[name].nb = shop_buy[name].max
 			end
@@ -645,7 +650,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			show_formspec_to_buy(name)
 			return
 		elseif fields["confirm"] then
-			minercantile.shop.buy(name, shop_buy[name].item, shop_buy[name].nb, shop_buy[name].price)
+			minercantile.shop.buy(name, shop_buy[name].itname, shop_buy[name].nb, shop_buy[name].price)
 			return
 		elseif fields["quit"] then
 			shop_buy[name] = nil
@@ -769,7 +774,7 @@ minetest.register_node("minercantile:shop", {
 		local name = player:get_player_name()
 		if not name or name == "" then return end
 		local meta = minetest.get_meta(pos)
-		local shop_type = minercantile.shop.shop_type[meta:get_int("shop_type") or 1]
+		local shop_type = minercantile.shop.shop_type[meta:get_int("shop_type")] or "all"
 		minercantile.shop.set_items_buy_list(name, shop_type)
 		if minetest.check_player_privs(name, {protection_bypass = true}) or minetest.check_player_privs(name, {server = true}) then
 			minetest.show_formspec(name, "minercantile:shop_admin_shop",  minercantile.get_formspec_shop_admin_shop(pos, node.name, name))
@@ -778,10 +783,10 @@ minetest.register_node("minercantile:shop", {
 			if (isopen and isopen == 1) then
 				local always_open = meta:get_int("always_open")
 				local tod = (minetest.get_timeofday() or 0) * 24000
-				if always_open == 1 or (tod > 4500 and tod < 19500) then --FIXME check tod 8h-21h
+				if always_open == 1 or (tod > 8000 and tod < 19000) then --FIXME check tod 8h-19h
 					minetest.show_formspec(name, "minercantile:shop_welcome",  get_formspec_welcome(name))
 				else
-					minetest.show_formspec(name, "minercantile:closed", "size[6,3]bgcolor[#2A2A2A;]label[2.6,0;Shop]label[1.2,1;Sorry shop is only open 7h-21h]button_exit[2.3,2.1;1.5,1;close;Close]")
+					minetest.show_formspec(name, "minercantile:closed", "size[6,3]bgcolor[#2A2A2A;]label[2.6,0;Shop]label[1.2,1;Sorry shop is only open 8h-19h]button_exit[2.3,2.1;1.5,1;close;Close]")
 				end
 			else
 				minetest.show_formspec(name, "minercantile:closed", "size[6,3]bgcolor[#2A2A2A;]label[2.6,0;Shop]label[1.7,1;Sorry shop is closed]button_exit[2.3,2.1;1.5,1;close;Close]")

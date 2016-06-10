@@ -68,7 +68,7 @@ function minercantile.wallet.give_money(name, amount, transaction)
 	end
 	minercantile.wallets[name].money = minercantile.wallet.get_money(name) + amount
 	if transaction then
-		local trans = os.date().. ":"..transaction..", new amount:"..minercantile.wallet.get_money(name)
+		local trans = os.date().. ":"..transaction
 		minercantile.add_transactions(name, trans)
 	end
 	minercantile.wallet.save_wallet(name)
@@ -81,7 +81,7 @@ function minercantile.wallet.take_money(name, amount, transaction)
 	end
 	minercantile.wallets[name].money = minercantile.wallet.get_money(name) - amount
 	if transaction then
-		local trans = os.date().. ": "..transaction..", new amount:"..minercantile.wallet.get_money(name)
+		local trans = os.date().. ": "..transaction
 		minercantile.add_transactions(name, trans)
 	end
 	minercantile.wallet.save_wallet(name)
@@ -112,8 +112,8 @@ function minercantile.send_money(sender, receiver, amount)
 	if minercantile.wallet.get_money(sender) < amount then
 		return false
 	end
-	minercantile.wallet.take_money(sender, amount, "Send "..amount.." Minecoins to "..receiver)
-	minercantile.wallet.give_money(receiver, amount, "Received "..amount.." Minecoins from "..sender)
+	minercantile.wallet.take_money(sender, amount, "Send "..amount.."$ to "..receiver)
+	minercantile.wallet.give_money(receiver, amount, "Received "..amount.."$ from "..sender)
 	return true
 end
 
@@ -123,18 +123,17 @@ function minercantile.get_formspec_wallet(name)
 		minercantile.wallet.load_wallet(name)
 	end
 	local formspec = {}
-	table.insert(formspec,"size[10,9]label[4.4,0;My Wallet]")
-	table.insert(formspec,"image[1,2;1,1;minercantile_money.png]") --FIXME add image
-	table.insert(formspec,"label[2,2.2;total:".. tostring(minercantile.wallet.get_money(name)) .."]")
-	table.insert(formspec,"label[4,3.3;10 last transactions]")
+	table.insert(formspec,"size[10,9]bgcolor[#2A2A2A;]label[4.4,0;My Wallet]")
+	table.insert(formspec,"label[0.5,1;Sold: ".. tostring(minercantile.wallet.get_money(name)) .."$]")
+	table.insert(formspec,"label[4,2.3;10 last transactions]")
 	
 	local transactions = minercantile.wallet.get_transactions(name)
 	if #transactions < 1 then
-		table.insert(formspec,"label[3.5,5;There are no transactions]")
+		table.insert(formspec,"label[3.5,4;There are no transactions]")
 	else
-		local y = 4
+		local y = 3
 		for _,transac in pairs(transactions) do
-		table.insert(formspec,"label[0,"..y..";".. transac .."]")
+		table.insert(formspec,"label[1.5,"..y..";".. transac .."]")
 			y = y+0.4
 		end
 	end
@@ -148,12 +147,11 @@ end
 function minercantile.get_formspec_wallet_transfert(name)
 	local money = minercantile.wallet.get_money(name)
 	local formspec = {}
-	table.insert(formspec,"size[10,9]label[4.4,0;My Wallet]")
-	table.insert(formspec,"image[1,2;1,1;minercantile_money.png]")
-	table.insert(formspec,"label[2,2.2;total:".. tostring(money) .."]")
+	table.insert(formspec,"size[10,9]bgcolor[#2A2A2A;]label[4.4,0;My Wallet]")
+	table.insert(formspec,"label[0.5,1;Sold: ".. tostring(money) .."$]")
 	
 	if money < 5 then
-		table.insert(formspec, "label[2,4.5;Sorry you can't send Minecoins, minimum amount is 5]")
+		table.insert(formspec, "label[2,4.5;Sorry you can't send money, minimum amount is 5$]")
 	else
 		if not states[name] then
 			states[name] = {}
@@ -178,10 +176,10 @@ function minercantile.get_formspec_wallet_transfert(name)
 			table.insert(formspec,"button[6,3.4;2,1;refresh;refresh list]")
 		else
 			table.insert(formspec, "dropdown[3,3.5;3,1;receiver;"..table.concat(states[name].players_list, ",")..";"..states[name].selected_id.."]")
-			table.insert(formspec, "label[3.5,6.5;Send "..states[name]["amount"].." to "..(states[name]["receiver"] or "").." ?]")
+			table.insert(formspec, "label[3.5,6.4;Send "..states[name]["amount"].."$ to "..(states[name]["receiver"] or "").." ?]")
 			table.insert(formspec,"button[4.1,7;1.5,1;send;send]")
 			table.insert(formspec,"button[6,3.4;1.5,1;refresh;refresh list]")	
-			table.insert(formspec, "label[3.5,4.5;amount to send(minimum 5)]")
+			table.insert(formspec, "label[3.5,4.5;Amount to send (minimum 5$)]")
 			table.insert(formspec, "button[1.7,5;1,1;amount;-1]")
 			table.insert(formspec, "button[2.7,5;1,1;amount;-10]")
 			table.insert(formspec, "button[3.7,5;1,1;amount;-100]")
@@ -198,8 +196,8 @@ end
 
 
 function minercantile.get_formspec_wallet_transfert_send(name)
-	local formspec = {"size[6,3]label[2,0;Validate sending]"}
-	table.insert(formspec, "label[1,1.2;Send "..tostring(states[name]["amount"]).." Minecoins to ".. states[name]["receiver"] .."]")
+	local formspec = {"size[6,3]bgcolor[#2A2A2A;]label[2,0;Validate sending]"}
+	table.insert(formspec, "label[2,1.2;Send "..tostring(states[name]["amount"]).."$ to ".. states[name]["receiver"] .."]")
 	table.insert(formspec, "button_exit[1.1,2.1;1.5,1;close;Abort]")
 	table.insert(formspec, "button[3.3,2.1;1.5,1;send;Send]")
 	return table.concat(formspec)
@@ -258,9 +256,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	elseif formname == "minercantile:transfert_send" then
 		if fields["send"] then
 			if minercantile.send_money( name, states[name]["receiver"], states[name]["amount"]) then
-				minetest.show_formspec(name, "minercantile:ended", "size[5,3]label[1.8,0;Validated]label[1.6,1;Minecoins sent]button_exit[1.8,2.1;1.5,1;close;Close]")
+				minetest.show_formspec(name, "minercantile:ended", "size[5,3]bgcolor[#2A2A2A;]label[1.8,0;Validated]label[1.7,1;Money sent]button_exit[1.8,2.1;1.5,1;close;Close]")
 			else
-				minetest.show_formspec(name, "minercantile:ended", "size[5,3]label[1.6,0;Error]label[1.5,1;Error occured]button_exit[1.8,2.1;1.5,1;close;Close]")
+				minetest.show_formspec(name, "minercantile:ended", "size[5,3]bgcolor[#2A2A2A;]label[1.6,0;Error]label[1.6,1;Error occured]button_exit[1.8,2.1;1.5,1;close;Close]")
 			end
 		elseif fields["quit"] or fields["close"] then
 			states[name] = nil
@@ -273,7 +271,7 @@ end)
 if (minetest.get_modpath("unified_inventory")) then
 	unified_inventory.register_button("wallet", {
 		type = "image",
-		image = "minercantile_money.png",
+		image = "minercantile_gold_coin.png",
 		tooltip = "My Wallet",
 		show_with = "interact",
 		action = function(player)
