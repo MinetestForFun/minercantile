@@ -36,5 +36,7 @@ This mod aims to make a big centralised store, under following conditions:
 
 - Even the system is supposed to stay independant, the admin can add or remove money from the store for prices regulation.
 
+- The shop can trade, at your option, a type of items, or any
+
 
 HAPPY TRADING!
