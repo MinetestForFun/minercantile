@@ -126,7 +126,7 @@ function minercantile.get_formspec_wallet(name)
 	table.insert(formspec,"size[10,9]bgcolor[#2A2A2A;]label[4.4,0;My Wallet]")
 	table.insert(formspec,"label[0.5,1;Sold: ".. tostring(minercantile.wallet.get_money(name)) .."$]")
 	table.insert(formspec,"label[4,2.3;10 last transactions]")
-	
+
 	local transactions = minercantile.wallet.get_transactions(name)
 	if #transactions < 1 then
 		table.insert(formspec,"label[3.5,4;There are no transactions]")
@@ -149,7 +149,7 @@ function minercantile.get_formspec_wallet_transfert(name)
 	local formspec = {}
 	table.insert(formspec,"size[10,9]bgcolor[#2A2A2A;]label[4.4,0;My Wallet]")
 	table.insert(formspec,"label[0.5,1;Sold: ".. tostring(money) .."$]")
-	
+
 	if money < 5 then
 		table.insert(formspec, "label[2,4.5;Sorry you can't send money, minimum amount is 5$]")
 	else
@@ -178,7 +178,7 @@ function minercantile.get_formspec_wallet_transfert(name)
 			table.insert(formspec, "dropdown[3,3.5;3,1;receiver;"..table.concat(states[name].players_list, ",")..";"..states[name].selected_id.."]")
 			table.insert(formspec, "label[3.5,6.4;Send "..states[name]["amount"].."$ to "..(states[name]["receiver"] or "").." ?]")
 			table.insert(formspec,"button[4.1,7;1.5,1;send;send]")
-			table.insert(formspec,"button[6,3.4;1.5,1;refresh;refresh list]")	
+			table.insert(formspec,"button[6,3.4;1.5,1;refresh;refresh list]")
 			table.insert(formspec, "label[3.5,4.5;Amount to send (minimum 5$)]")
 			table.insert(formspec, "button[1.7,5;1,1;amount;-1]")
 			table.insert(formspec, "button[2.7,5;1,1;amount;-10]")

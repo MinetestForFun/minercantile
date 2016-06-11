@@ -6,6 +6,7 @@ minercantile.shop.max_stock = 20000 --shop don't buy infinity items
 --shop type, only if item name contains word
 minercantile.shop.shop_type = {"all", "3d_armor", "beds", "boats", "brick", "carts", "chest", "cobble", "dye", "doors", "farming", "food", "signs", "fishing", "glass", "decor", "mesecons", "nether", "pipeworks", "runes", "spears", "stone", "tree", "walls", "wood", "wool"}
 
+
 --function shop money
 function minercantile.shop.get_money()
 	return (minercantile.stock.money or 0)
@@ -69,13 +70,13 @@ end
 -- table of sellable/buyable items,ignore admin stuff
 function minercantile.shop.register_items()
 	minercantile.registered_items = {}
-	for name, def in pairs(minetest.registered_items) do
-		if not name:find("maptools:") --ignore maptools
+	for itname, def in pairs(minetest.registered_items) do
+		if not itname:find("maptools:") --ignore maptools
+		and not itname:find("_coin")
 		and not def.groups.not_in_creative_inventory
 		and not def.groups.unbreakable
-		and def.description and def.description ~= "" then
-		--and minetest.get_all_craft_recipes(name) then
-			minercantile.registered_items[name] = {groups = def.groups, desc = def.description}
+		and (def.description and def.description ~= "") then
+			minercantile.registered_items[itname] = {groups = def.groups, desc = def.description}
 		end
 	end
 end
@@ -102,7 +103,7 @@ function minercantile.load_stock_base()
 			minercantile.stock_base = table.copy(data)
 			if minercantile.stock_base.money then
 				minercantile.stock.money = minercantile.stock_base.money
-			end			
+			end
 			if minercantile.stock_base.items then
 				for itname, def in pairs(minercantile.stock_base.items) do
 					minercantile.stock.items[itname] = table.copy(def)
@@ -167,9 +168,6 @@ end
 
 -- sell fonction
 function minercantile.shop.get_buy_price(itname)
-	if itname == "minercantile:copper_coin" or itname == "minercantile:silver_coin" or itname == "minercantile:gold_coin" then -- dont's buy/sell coins
-		return nil
-	end
 	local price = nil
 	local money = minercantile.shop.get_money()
 	if not minercantile.stock.items[itname] then
@@ -189,9 +187,6 @@ end
 
 -- sell fonction
 function minercantile.shop.get_sell_price(itname, wear)
-	if itname == "minercantile:copper_coin" or itname == "minercantile:silver_coin" or itname == "minercantile:gold_coin" then -- dont's buy/sell coins
-		return nil
-	end
 	local price = nil
 	local money = minercantile.shop.get_money()
 	if not minercantile.stock.items[itname] then
@@ -267,7 +262,7 @@ local function get_shop_inventory_by_page(name)
 				if nb > 0 then
 					local price = minercantile.shop.get_buy_price(itname)
 					if price and price > 0 then
-						table.insert(inv_list, {name=itname,nb=nb,price=price})
+						table.insert(inv_list, {name=itname, nb=nb, price=price})
 					end
 				end
 			end
