@@ -4,7 +4,7 @@ local shop_admin = {}
 
 minercantile.shop.max_stock = 20000 --shop don't buy infinity items
 --shop type, only if item name contains word
-minercantile.shop.shop_type = {"all", "3d_armor", "beds", "boats", "brick", "carts", "chest", "cobble", "dye", "doors", "farming", "food", "signs", "fishing", "glass", "decor", "mesecons", "nether", "pipeworks", "runes", "spears", "stone", "tree", "walls", "wood", "wool"}
+minercantile.shop.shop_type = {"General", "3d_armor", "Axe_", "Bag", "Beds", "Boats", "Brick", "Carts", "Chest", "Cobble", "Columnia", "Decor", "Dye", "Doors", "Farming", "Fence", "Fishing", "Food", "Glass", "Hoe", "Ingot", "Lump", "Mesecons", "Nether", "Pickaxe", "Pipeworks", "Runes", "Shield", "Shovel", "Sign", "Slab", "Spears", "Stair_", "Stone", "Sword", "Throwing", "Tree", "Walls", "Wood", "Wool"}
 
 
 --function shop money
@@ -155,9 +155,7 @@ function minercantile.shop.set_items_buy_list(name, shop_type)
 	shop_buy[name].items_type = {}
 	for itname, def in pairs(minercantile.stock.items) do
 		if minercantile.shop.is_available(itname) and def.nb > 0 then
-			--local mod = string.split(itname, ":")[1]
-			--if shop_type == "all" or shop_type == mod then
-			if shop_type == "all" or itname:find(shop_type) then
+			if shop_type == "General" or itname:find(string.lower(shop_type)) then
 				table.insert(shop_buy[name].items_type, itname)
 			end
 		end
@@ -735,6 +733,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			for i, n in pairs(minercantile.shop.shop_type) do
 				if n == fields["select_type"] then
 					meta:set_int("shop_type", i)
+					local t = string.gsub(n, "_$","")
+					meta:set_string("infotext", t.." Shop")
 					break
 				end
 			end
@@ -756,22 +756,22 @@ minetest.register_node("minercantile:shop", {
 	paramtype = "light",
 	on_construct = function(pos)
 		local meta = minetest.get_meta(pos)
-		meta:set_string("infotext", "Barter Shop")
-		meta:set_int("open", 0)
+		meta:set_string("infotext", "General Shop")
+		meta:set_int("open", 1)
 		meta:set_int("always_open", 0)
 		meta:set_int("shop_type", 1)
 	end,
 	can_dig = function(pos, player)
 		local name = player:get_player_name()
-		return (minetest.check_player_privs(name, {protection_bypass = true}) or minetest.check_player_privs(name, {server = true}))
+		return (minetest.check_player_privs(name, {protection_bypass = true}) or minetest.check_player_privs(name, {shop = true}))
 	end,
 	on_rightclick = function(pos, node, player, itemstack, pointed_thing)
 		local name = player:get_player_name()
 		if not name or name == "" then return end
 		local meta = minetest.get_meta(pos)
-		local shop_type = minercantile.shop.shop_type[meta:get_int("shop_type")] or "all"
+		local shop_type = minercantile.shop.shop_type[meta:get_int("shop_type")] or "General"
 		minercantile.shop.set_items_buy_list(name, shop_type)
-		if minetest.check_player_privs(name, {protection_bypass = true}) or minetest.check_player_privs(name, {server = true}) then
+		if minetest.check_player_privs(name, {protection_bypass = true}) or minetest.check_player_privs(name, {shop = true}) then
 			minetest.show_formspec(name, "minercantile:shop_admin_shop",  minercantile.get_formspec_shop_admin_shop(pos, node.name, name))
 		else
 			local isopen = meta:get_int("open")
@@ -794,7 +794,7 @@ minetest.register_node("minercantile:shop", {
 minetest.register_chatcommand("shop_addmoney",{
 	params = "money",
 	description = "give money to the shop",
-	privs = {server = true},
+	privs = {shop = true},
 	func = function(name, param)
 		param = string.gsub(param, " ", "")
 		local amount = tonumber(param)
@@ -810,7 +810,7 @@ minetest.register_chatcommand("shop_addmoney",{
 minetest.register_chatcommand("shop_delmoney",{
 	params = "money",
 	description = "del money to the shop",
-	privs = {server = true},
+	privs = {shop = true},
 	func = function(name, param)
 		param = string.gsub(param, " ", "")
 		local amount = tonumber(param)

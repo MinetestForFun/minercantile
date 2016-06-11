@@ -1,5 +1,5 @@
 minercantile = {}
-
+minetest.register_privilege("shop", "Can place|dig|configure shop")
 --path
 minercantile.path = minetest.get_worldpath()
 minercantile.path_wallet =  minercantile.path.. "/minercantile_wallet/"

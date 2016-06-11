@@ -99,7 +99,7 @@ minetest.register_node("minercantile:bancomatic", {
 	end,
 	can_dig = function(pos, player)
 		local name = player:get_player_name()
-		return (minetest.check_player_privs(name, {protection_bypass = true}) or minetest.check_player_privs(name, {server = true}))
+		return (minetest.check_player_privs(name, {protection_bypass = true}) or minetest.check_player_privs(name, {shop = true}))
 	end,
 	allow_metadata_inventory_move = function(pos, from_list, from_index, to_list, to_index, count, player)
 		return 0
