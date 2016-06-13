@@ -73,24 +73,75 @@ local function get_bancomatic_formspec(pos, name)
 end
 
 
---change money.
-minetest.register_node("minercantile:bancomatic", {
+--change money. code based on atm from https://github.com/minetest-mods/global_exchange
+minetest.register_node("minercantile:bancomatic_bottom", {
 	description = "Bancomatic",
+	inventory_image = "minercantile_bancomatic_front.png",
+	wield_image = "minercantile_bancomatic_front.png",
+	drawtype = "nodebox",
 	tiles = {
 		"minercantile_bancomatic_back.png",
 		"minercantile_bancomatic_back.png",
-		"minercantile_bancomatic_side.png",
-		"minercantile_bancomatic_side.png",
 		"minercantile_bancomatic_back.png",
-		"minercantile_bancomatic_front.png",
+		"minercantile_bancomatic_back.png",
+		"minercantile_bancomatic_back.png",
+		"minercantile_bancomatic_back.png",
 	},
-	--top, bottom, right, left, back, front
+	paramtype = "light",
 	paramtype2 = "facedir",
-	--groups = {choppy = 2, oddly_breakable_by_hand = 2},
-	groups = {snappy=2, choppy=2, oddly_breakable_by_hand=2},
-	legacy_facedir_simple = true,
 	is_ground_content = false,
-	sounds = default.node_sound_wood_defaults(),
+	light_source = 3,
+		groups = {cracky=2, atm = 1},
+	node_box = {
+		type = "fixed",
+		fixed = {
+		{-0.5, -0.5, -0.5, 0.5, 0.5, 0.5},
+		}
+	},
+	selection_box = {
+		type = "fixed",
+		fixed = {
+			{-0.5, -0.5, -0.5, 0.5, 0.5, 0.5},
+			{-0.5, 0.5, -0.5, -0.375, 1.125, -0.25},
+			{0.375, 0.5, -0.5, 0.5, 1.125, -0.25},
+			{-0.5, 0.5, -0.25, 0.5, 1.5, 0.5},
+			{-0.5, 1.125, -0.4375, -0.375, 1.25, -0.25},
+			{0.375, 1.125, -0.4375, 0.5, 1.25, -0.25},
+			{-0.5, 1.25, -0.375, -0.375, 1.375, -0.25},
+			{0.375, 1.25, -0.375, 0.5, 1.375, -0.25},
+			{-0.5, 1.375, -0.3125, -0.375, 1.5, -0.25},
+			{0.375, 1.375, -0.3125, 0.5, 1.5, -0.25},
+		},
+	},
+	on_place = function(itemstack, placer, pointed_thing)
+		local under = pointed_thing.under
+		local pos
+		if minetest.registered_items[minetest.get_node(under).name].buildable_to then
+			pos = under
+		else
+			pos = pointed_thing.above
+		end
+		local def = minetest.registered_nodes[minetest.get_node(pos).name]
+		if not def or not def.buildable_to then
+			minetest.remove_node(pos)
+			return itemstack
+		end
+		local dir = minetest.dir_to_facedir(placer:get_look_dir())
+		local pos2 = {x = pos.x, y = pos.y + 1, z = pos.z}
+		local def2 = minetest.registered_nodes[minetest.get_node(pos2).name]
+		if not def2 or not def2.buildable_to then
+			return itemstack
+		end
+		minetest.set_node(pos, {name = "minercantile:bancomatic_bottom", param2 = dir})
+		minetest.set_node(pos2, {name = "minercantile:bancomatic_top", param2 = dir})
+	end,
+	on_destruct = function(pos)
+		local pos2 = {x = pos.x, y = pos.y + 1, z = pos.z}
+		local n2 = minetest.get_node(pos2)
+		if minetest.get_item_group(n2.name, "atm") == 2 then
+			minetest.remove_node(pos2)
+		end
+	end,
 	on_construct = function(pos)
 		local meta = minetest.get_meta(pos)
 		meta:set_string("infotext", "Bancomatic")
@@ -104,17 +155,17 @@ minetest.register_node("minercantile:bancomatic", {
 	allow_metadata_inventory_move = function(pos, from_list, from_index, to_list, to_index, count, player)
 		return 0
 	end,
-    allow_metadata_inventory_put = function(pos, listname, index, stack, player)
+	allow_metadata_inventory_put = function(pos, listname, index, stack, player)
 		local itname = stack:get_name()
 		if coins_convert[itname] ~= nil then
 			return stack:get_count()
 		end
 		return 0
 	end,
-    allow_metadata_inventory_take = function(pos, listname, index, stack, player)
+	allow_metadata_inventory_take = function(pos, listname, index, stack, player)
 		return 0
 	end,
-    on_metadata_inventory_put = function(pos, listname, index, stack, player)
+	on_metadata_inventory_put = function(pos, listname, index, stack, player)
 		local itname = stack:get_name()
 		if coins_convert[itname] ~= nil then
 			local name = player:get_player_name()
@@ -131,17 +182,40 @@ minetest.register_node("minercantile:bancomatic", {
 	on_rightclick = function(pos, node, clicker)
 		minetest.show_formspec(clicker:get_player_name(), "minercantile:bancomatic", get_bancomatic_formspec(pos, clicker:get_player_name()))
 	end,
-	on_blast = function() end,
 })
 
 
---nodes
-minetest.register_craft({
-	output = "minercantile:bancomatic",
-	recipe = {
-		{"default:wood", "default:mese", "default:wood"},
-		{"default:wood", "default:mese", "default:wood"},
-		{"default:wood", "default:mese", "default:wood"},
+minetest.register_node("minercantile:bancomatic_top", {
+	drawtype = "nodebox",
+	tiles = {
+		"minercantile_bancomatic_back.png",
+		"minercantile_bancomatic_back.png",
+		"minercantile_bancomatic_side.png",
+		"minercantile_bancomatic_side.png",
+		"minercantile_bancomatic_back.png",
+		"minercantile_bancomatic_front.png",
 	},
+	paramtype = "light",
+	paramtype2 = "facedir",
+	is_ground_content = false,
+	light_source = 3,
+	node_box = {
+		type = "fixed",
+		fixed = {
+			{-0.5, -0.5, -0.5, -0.375, 0.125, -0.25},
+			{0.375, -0.5, -0.5, 0.5, 0.125, -0.25},
+			{-0.5, -0.5, -0.25, 0.5, 0.5, 0.5},
+			{-0.5, 0.125, -0.4375, -0.375, 0.25, -0.25},
+			{0.375, 0.125, -0.4375, 0.5, 0.25, -0.25},
+			{-0.5, 0.25, -0.375, -0.375, 0.375, -0.25},
+			{0.375, 0.25, -0.375, 0.5, 0.375, -0.25},
+			{-0.5, 0.375, -0.3125, -0.375, 0.5, -0.25},
+			{0.375, 0.375, -0.3125, 0.5, 0.5, -0.25},
+		}
+	},
+	selection_box = {
+		type = "fixed",
+		fixed = {0, 0, 0, 0, 0, 0},
+	},
+	groups = { atm = 2, not_in_creative_inventory = 1},
 })
-
