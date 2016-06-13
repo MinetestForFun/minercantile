@@ -79,6 +79,41 @@ function minercantile.shop.register_items()
 			minercantile.registered_items[itname] = {groups = def.groups, desc = def.description}
 		end
 	end
+	minercantile.shop.register_whitelist()
+end
+
+
+function minercantile.shop.register_whitelist()
+	for _, itname in pairs(minercantile.shop.items_whitelist) do
+		local def = minetest.registered_items[itname]
+		if def then
+			minercantile.registered_items[itname] = {groups = def.groups, desc = def.description}
+		end
+	end
+end
+
+
+function minercantile.shop.add_item(itname, nb)
+	if minercantile.shop.is_available(itname) then
+		if not minercantile.stock.items[itname] then
+			minercantile.stock.items[itname] = {nb=0}
+		end
+		minercantile.stock.items[itname].nb = minercantile.stock.items[itname].nb + nb
+		minercantile.save_stock()
+	end
+end
+
+function minercantile.shop.del_item(itname, nb)
+	if minercantile.shop.is_available(itname) then
+		if not minercantile.stock.items[itname] then
+			minercantile.stock.items[itname] = {nb=0}
+		end
+		minercantile.stock.items[itname].nb = minercantile.stock.items[itname].nb - nb
+		if minercantile.stock.items[itname].nb < 0 then
+			minercantile.stock.items[itname].nb = 0
+		end
+		minercantile.save_stock()
+	end
 end
 
 
@@ -809,7 +844,7 @@ minetest.register_chatcommand("shop_addmoney",{
 
 minetest.register_chatcommand("shop_delmoney",{
 	params = "money",
-	description = "del money to the shop",
+	description = "del money from the shop",
 	privs = {shop = true},
 	func = function(name, param)
 		param = string.gsub(param, " ", "")
@@ -820,5 +855,69 @@ minetest.register_chatcommand("shop_delmoney",{
 		end
 		minercantile.shop.take_money(amount, true)
 		minetest.chat_send_player(name, "you delete "..amount.. ", new total:".. minercantile.shop.get_money())
+	end,
+})
+
+minetest.register_chatcommand("shop_additem",{
+	params = "name number",
+	description = "give item to the shop",
+	privs = {shop = true},
+	func = function(name, param)
+		if ( param == nil ) then
+			minetest.chat_send_player(name, "invalid, no param")
+			return
+		end
+		local itname, amount = param:match("^(%S+)%s(%S+)$")
+		if itname == nil then
+			minetest.chat_send_player(name, "invalid param item")
+			return
+		end
+		if not minercantile.shop.is_available(itname) then
+			minetest.chat_send_player(name, "invalid param item unknow")
+			return
+		end
+		if amount == nil or not tonumber(amount) then
+			minetest.chat_send_player(name, "invalid param amount")
+			return
+		end
+		local amount = tonumber(amount)
+		if amount < 1 then
+			minetest.chat_send_player(name, "invalid param amount")
+			return
+		end
+		minercantile.shop.add_item(itname, amount)
+		minetest.chat_send_player(name, "you add "..amount.. " items, new total:".. minercantile.shop.get_nb(itname))
+	end,
+})
+
+minetest.register_chatcommand("shop_delitem",{
+	params = "name number",
+	description = "del item from the shop",
+	privs = {shop = true},
+	func = function(name, param)
+		if ( param == nil ) then
+			minetest.chat_send_player(name, "invalid, no param")
+			return
+		end
+		local itname, amount = param:match("^(%S+)%s(%S+)$")
+		if itname == nil then
+			minetest.chat_send_player(name, "invalid param item")
+			return
+		end
+		if not minercantile.shop.is_available(itname) then
+			minetest.chat_send_player(name, "invalid param item unknow")
+			return
+		end
+		if amount == nil or not tonumber(amount) then
+			minetest.chat_send_player(name, "invalid param amount")
+			return
+		end
+		local amount = tonumber(amount)
+		if amount < 1 then
+			minetest.chat_send_player(name, "invalid param amount")
+			return
+		end
+		minercantile.shop.del_item(itname, amount)
+		minetest.chat_send_player(name, "you delete "..amount.. " items, new total:".. minercantile.shop.get_nb(itname))
 	end,
 })

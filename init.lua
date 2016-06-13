@@ -8,10 +8,13 @@ minercantile.file_stock = minercantile.path.."/minercantile_stock.txt"
 minetest.mkdir(minercantile.path_wallet)
 
 --items
-minercantile.stock_base = {}
-minercantile.stock = {} -- table saved money, items list
 minercantile.shop = {}
 minercantile.shop.items_inventory = {}
+minercantile.shop.items_whitelist = {}
+
+--stock items
+minercantile.stock_base = {}
+minercantile.stock = {} -- table saved money, items list
 minercantile.stock.items = {}
 minercantile.stock.money = 8000
 minercantile.stock.transac_b = 0
@@ -23,6 +26,7 @@ minercantile.wallet = {}
 minercantile.wallets = {}
 
 --load money
+dofile(minetest.get_modpath("minercantile") .. "/whitelist.lua")
 dofile(minetest.get_modpath("minercantile") .. "/wallets.lua")
 dofile(minetest.get_modpath("minercantile") .. "/change.lua")
 dofile(minetest.get_modpath("minercantile") .. "/shop.lua")
@@ -30,7 +34,7 @@ dofile(minetest.get_modpath("minercantile") .. "/shop.lua")
 
 --load items base and available
 minercantile.load_stock_base()
-minetest.after(1, function()
+minetest.after(10, function()
 		minercantile.shop.register_items()
 		minercantile.load_stock()
 	end
