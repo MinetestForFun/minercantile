@@ -211,7 +211,7 @@ function minercantile.shop.get_buy_price(itname)
 	if minercantile.stock.items[itname].price ~= nil then -- if defined price
 		price = math.ceil(minercantile.stock.items[itname].price)
 	else
-		price = math.ceil((money/1000)/(math.log(nb+2000-99)*10)*1000000/(math.pow((nb+2000-99),(2.01))))
+		price = math.ceil((money/1000)/((0.001*(2340+nb)-0.1)^3.9)/10) -- was price = math.ceil((money/1000)/(math.log(nb+2000-99)*10)*1000000/(math.pow((nb+2000-99),(2.01))))
 	end
 	if price and price < 1 then price = 1 end
 	return price
@@ -231,7 +231,7 @@ function minercantile.shop.get_sell_price(itname, wear)
 	if minercantile.stock.items[itname].price ~= nil then -- if defined price
 		price = math.floor(minercantile.stock.items[itname].price)
 	else
-		price = math.floor(((money/1000)/(math.log(nb+2000+99)*10)*1000000/(math.pow((nb+2000+99),(2.01))))+0.5)
+		price = math.floor((money/1000)/((0.001*(2340+nb)+0.1)^3.9)/10) --was price = math.floor(((money/1000)/(math.log(nb+2000+99)*10)*1000000/(math.pow((nb+2000+99),(2.01))))+0.5)
 	end
 
 	if wear and wear > 0 then --calcul price with % wear, (0-65535)
