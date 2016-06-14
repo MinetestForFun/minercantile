@@ -16,7 +16,7 @@ minercantile.shop.items_whitelist = {}
 minercantile.stock_base = {}
 minercantile.stock = {} -- table saved money, items list
 minercantile.stock.items = {}
-minercantile.stock.money = 8000
+minercantile.stock.money = 1000000
 minercantile.stock.transac_b = 0
 minercantile.stock.transac_s = 0
 
