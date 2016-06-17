@@ -3,8 +3,40 @@ local shop_buy = {}
 local shop_admin = {}
 
 minercantile.shop.max_stock = 20000 --shop don't buy infinity items
---shop type, only if item name contains word
-minercantile.shop.shop_type = {"General", "3d_armor", "Axe_", "Bag", "Beds", "Boats", "Brick", "Carts", "Chest", "Cobble", "Columnia", "Decor", "Dye", "Doors", "Farming", "Fence", "Fishing", "Food", "Glass", "Hoe", "Ingot", "Lump", "Mesecons", "Nether", "Pickaxe", "Pipeworks", "Runes", "Shield", "Shovel", "Sign", "Slab", "Spears", "Stair_", "Stone", "Sword", "Throwing", "Tree", "Walls", "Wood", "Wool"}
+minercantile.shop.shop = {}
+--shop type
+minercantile.shop.shop_type = {"General", "armors", "Beds", "Boats", "Brick", "Carts", "Chest", "Cobble", "Columnia", "Decor", "Doors", "Dye", "Farming", "Fences", "Fishing", "Flowers", "Glass", "Ingot", "Mesecons", "Nether", "Runes", "Sea", "Sign", "Stair_Slab", "Stone", "Tools", "Wood", "Wool"}
+
+minercantile.shop.shop_sorted = {
+	armors = { groups = {"armor_heal"}, regex={"sword", "throwing", "spears"}},
+	Beds = { groups = {"bed"}, regex={":bed"}},
+	Boats = { groups = {}, regex={"boats"}},
+	Brick = { groups = {}, regex={"brick"}},
+	Carts = { groups = {"rail", "connect_to_raillike"}, regex={"cart"}},
+	Chest = { groups = {}, regex={"chest"}},
+	Cobble = { groups = {}, regex={"cobble"}},
+	Columnia = { groups = {}, regex={"columnia"}},
+	Decor = { groups = {}, regex={"decor"}},
+	Doors = { groups = {}, regex={"door"}},
+	Dye = { groups = {"dye"}, regex={}},
+	Farming = { groups = {}, regex={"farming", "food"}},
+	Fences = { groups = {"fence", "fences", "wall"}, regex={}},
+	Flowers  = { groups = {"flora", "flower"}, regex={}},
+	Fishing = { groups = {}, regex={"fishing"}},
+	Glass = { groups = {}, regex={"glass"}},
+	Ingot = { groups = {"ingot"}, regex={"lump", ":diamond"}},
+	--Leaves = { groups = {"leaves"}, regex={}},
+	Mesecons = { groups = {}, regex={"mesecon", "pipeworks"}},
+	Nether = { groups = {"nether"}, regex={}},
+	Runes = { groups = {"amulet", "magic", "rune"}, regex={}},
+	Sea = { groups = {"sea", "seaplants", "seacoral"}, regex={}},
+	Sign = { groups = {}, regex={"sign"}},
+	Stair_Slab = { groups = {"stair", "slab"}, regex={}},
+	Stone = { groups = {"stone", "sand"}, regex={"stone", "cobble", "sand", "brick"}},
+	Tools = { groups = {}, regex={":pick", ":axe", ":shovel", ":hoe", ":bag"}},
+	Wood = { groups = {"wood", "coloredsticks", "leaves", "stick", "tree", "tree_root", "sapling"}, regex={}},
+	Wool = { groups = {"wool"}, regex={"cotton"}},
+}
 
 
 --function shop money
@@ -67,9 +99,27 @@ function minercantile.shop.get_item_def(itname)
 	return nil
 end
 
+
+function minercantile.shop.is_shop_type(itname, def, shop_def)
+	for _, group in pairs(shop_def.groups) do
+		if def.groups[group] then
+			return true
+		end
+	end
+	for _, regex in pairs(shop_def.regex) do
+		if regex ~= "" and itname:find(regex) then
+			return true
+		end
+	end
+	return false
+end
+
+
 -- table of sellable/buyable items,ignore admin stuff
 function minercantile.shop.register_items()
 	minercantile.registered_items = {}
+	minercantile.shop.register_whitelist()
+
 	for itname, def in pairs(minetest.registered_items) do
 		if not itname:find("maptools:") --ignore maptools
 		and not itname:find("_coin")
@@ -79,7 +129,19 @@ function minercantile.shop.register_items()
 			minercantile.registered_items[itname] = {groups = def.groups, desc = def.description}
 		end
 	end
-	minercantile.shop.register_whitelist()
+
+	minercantile.shop.shop["General"] = {}
+	for itname, def in pairs(minercantile.registered_items) do
+		table.insert(minercantile.shop.shop["General"], itname)
+		for shop, shop_def in pairs(minercantile.shop.shop_sorted) do
+			if not minercantile.shop.shop[shop] then
+				minercantile.shop.shop[shop] = {}
+			end
+			if minercantile.shop.is_shop_type(itname, def, shop_def) then
+				table.insert(minercantile.shop.shop[shop], itname)
+			end
+		end
+	end
 end
 
 
@@ -188,14 +250,14 @@ end
 function minercantile.shop.set_items_buy_list(name, shop_type)
 	shop_buy[name] = {page=1, search=""}
 	shop_buy[name].items_type = {}
-	for itname, def in pairs(minercantile.stock.items) do
-		if minercantile.shop.is_available(itname) and def.nb > 0 then
-			if shop_type == "General" or itname:find(string.lower(shop_type)) then
+	if minercantile.shop.shop[shop_type] then
+		for _, itname in ipairs(minercantile.shop.shop[shop_type]) do
+			if minercantile.shop.is_available(itname) and minercantile.shop.get_nb(itname) > 0 then
 				table.insert(shop_buy[name].items_type, itname)
 			end
 		end
+		table.sort(shop_buy[name].items_type)
 	end
-	table.sort(shop_buy[name].items_type)
 end
 
 
@@ -638,7 +700,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				local itname = string.sub(b, 14)
 				shop_buy[name].itname = itname
 				shop_buy[name].max = math.floor(minercantile.shop.get_nb(itname)/4)
-				shop_buy[name].nb = 1
+				shop_buy[name].nb = math.floor(minercantile.shop.get_nb(itname)/4)
+				if shop_buy[name].nb < 1 then
+					shop_buy[name].nb = 1
+				end
 				shop_buy[name].price = minercantile.shop.get_buy_price(itname)
 				minetest.show_formspec(name, "minercantile:shop_buy_items",  get_formspec_buy_items(name))
 				return
@@ -698,7 +763,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				shop_sell[name].itname = item.name
 				shop_sell[name].max = item.nb
 				shop_sell[name].wear = item.wear
-				shop_sell[name].nb = 1
+				shop_sell[name].nb = shop_sell[name].max
 				shop_sell[name].price = minercantile.shop.get_sell_price(item.name, item.wear)
 				minetest.show_formspec(name, "minercantile:shop_sell_items",  get_formspec_sell_items(name))
 				break
