@@ -4,11 +4,12 @@ local shop_admin = {}
 
 minercantile.shop.max_stock = 20000 --shop don't buy infinity items
 minercantile.shop.shop = {}
+minercantile.registered_items = {}
 --shop type
-minercantile.shop.shop_type = {"General", "armors", "Beds", "Boats", "Brick", "Carts", "Chest", "Cobble", "Columnia", "Decor", "Doors", "Dye", "Farming", "Fences", "Fishing", "Flowers", "Glass", "Ingot", "Mesecons", "Nether", "Runes", "Sea", "Sign", "Stair_Slab", "Stone", "Tools", "Wood", "Wool"}
+minercantile.shop.shop_type = {"General", "Armors", "Beds", "Boats", "Brick", "Carts", "Chest", "Cobble", "Columnia", "Decor", "Doors", "Dye", "Farming", "Fences", "Fishing", "Flowers", "Furnaces", "Glass", "Ingot", "Mesecons", "Nether", "Runes", "Sea", "Sign", "Stair_Slab", "Stone", "Tools", "Wood", "Wool"}
 
 minercantile.shop.shop_sorted = {
-	armors = { groups = {"armor_heal"}, regex={"sword", "throwing", "spears"}},
+	Armors = { groups = {"armor_heal"}, regex={"sword", "throwing", "spears"}},
 	Beds = { groups = {"bed"}, regex={":bed"}},
 	Boats = { groups = {}, regex={"boats"}},
 	Brick = { groups = {}, regex={"brick"}},
@@ -23,8 +24,9 @@ minercantile.shop.shop_sorted = {
 	Fences = { groups = {"fence", "fences", "wall"}, regex={}},
 	Flowers  = { groups = {"flora", "flower"}, regex={}},
 	Fishing = { groups = {}, regex={"fishing"}},
+	Furnaces = { groups = {}, regex={"furnace"}},
 	Glass = { groups = {}, regex={"glass"}},
-	Ingot = { groups = {"ingot"}, regex={"lump", ":diamond"}},
+	Ingot = { groups = {"ingot"}, regex={"lump", ":diamond", ":nyancat", ":mese"}},
 	--Leaves = { groups = {"leaves"}, regex={}},
 	Mesecons = { groups = {}, regex={"mesecon", "pipeworks"}},
 	Nether = { groups = {"nether"}, regex={}},
@@ -248,7 +250,7 @@ end
 
 --create list items for formspec (search/pages)
 function minercantile.shop.set_items_buy_list(name, shop_type)
-	shop_buy[name] = {page=1, search=""}
+	shop_buy[name] = {page=1, search="", shop_type=shop_type}
 	shop_buy[name].items_type = {}
 	if minercantile.shop.shop[shop_type] then
 		for _, itname in ipairs(minercantile.shop.shop[shop_type]) do
@@ -262,7 +264,7 @@ end
 
 
 -- sell fonction
-function minercantile.shop.get_buy_price(itname)
+function minercantile.shop.get_buy_price(shop_type, itname)
 	local price = nil
 	local money = minercantile.shop.get_money()
 	if not minercantile.stock.items[itname] then
@@ -274,6 +276,10 @@ function minercantile.shop.get_buy_price(itname)
 		price = math.ceil(minercantile.stock.items[itname].price)
 	else
 		price = math.ceil((money/1000)/((0.001*(2340+nb-99))^3.9)/13) -- was price = math.ceil((money/1000)/(math.log(nb+2000-99)*10)*1000000/(math.pow((nb+2000-99),(2.01))))
+	end
+	if price and shop_type ~= "General" then--specific shop sell -10%
+		local pct = math.ceil((price * 10)/100)
+		price = math.ceil(price - pct)
 	end
 	if price and price < 1 then price = 1 end
 	return price
@@ -328,6 +334,7 @@ local function get_shop_inventory_by_page(name)
 	local page = shop_buy[name].page
 	local search = shop_buy[name].search
 	local nb_items, nb_pages
+	local shop_type = shop_buy[name].shop_type or "General"
 	local inv_list = {}
 	if search ~= "" then
 		nb_items = #shop_buy[name].items_list
@@ -339,7 +346,7 @@ local function get_shop_inventory_by_page(name)
 			if not itname then break end
 			local nb = minercantile.shop.get_nb(itname)
 			if nb > 0 then
-				local price = minercantile.shop.get_buy_price(itname)
+				local price = minercantile.shop.get_buy_price(shop_type, itname)
 				if price and price > 0 then
 					table.insert(inv_list, {name=itname, nb=nb, price=price})
 				end
@@ -355,7 +362,7 @@ local function get_shop_inventory_by_page(name)
 			if itname then
 				local nb = minercantile.shop.get_nb(itname)
 				if nb > 0 then
-					local price = minercantile.shop.get_buy_price(itname)
+					local price = minercantile.shop.get_buy_price(shop_type, itname)
 					if price and price > 0 then
 						table.insert(inv_list, {name=itname, nb=nb, price=price})
 					end
@@ -700,11 +707,23 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				local itname = string.sub(b, 14)
 				shop_buy[name].itname = itname
 				shop_buy[name].max = math.floor(minercantile.shop.get_nb(itname)/4)
-				shop_buy[name].nb = math.floor(minercantile.shop.get_nb(itname)/4)
+				if minetest.registered_items[itname].stack_max and minetest.registered_items[itname].stack_max == 1 then
+					shop_buy[name].max = 1
+					shop_buy[name].nb = 1
+				else
+					shop_buy[name].max = math.floor(minercantile.shop.get_nb(itname)/4)
+					shop_buy[name].nb = math.floor(minercantile.shop.get_nb(itname)/4)
+				end
+				if shop_buy[name].max > 99 then
+					shop_buy[name].max = 99
+				end
 				if shop_buy[name].nb < 1 then
 					shop_buy[name].nb = 1
+				elseif shop_buy[name].nb > 99 then
+					shop_buy[name].nb = 99
 				end
-				shop_buy[name].price = minercantile.shop.get_buy_price(itname)
+				local shop_type = shop_buy[name].shop_type or "General"
+				shop_buy[name].price = minercantile.shop.get_buy_price(shop_type, itname)
 				minetest.show_formspec(name, "minercantile:shop_buy_items",  get_formspec_buy_items(name))
 				return
 			end
@@ -762,6 +781,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				shop_sell[name].item = item
 				shop_sell[name].itname = item.name
 				shop_sell[name].max = item.nb
+				if shop_sell[name].max > 99 then
+					shop_sell[name].max = 99
+				end
 				shop_sell[name].wear = item.wear
 				shop_sell[name].nb = shop_sell[name].max
 				shop_sell[name].price = minercantile.shop.get_sell_price(item.name, item.wear)
