@@ -833,6 +833,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			minetest.show_formspec(name, "minercantile:shop_welcome",  get_formspec_welcome(name))
 			return
 		end
+		if not shop_admin[name] then return end
 		local pos = shop_admin[name].pos
 		local node_name = shop_admin[name].node_name
 		local isnode = minetest.get_node_or_nil(pos)
