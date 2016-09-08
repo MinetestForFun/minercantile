@@ -762,6 +762,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			show_formspec_to_buy(name)
 			return
 		elseif fields["confirm"] then
+			if not shop_buy[name] or not shop_buy[name].itname or not shop_buy[name].nb or not shop_buy[name].price then return end
 			minercantile.shop.buy(name, shop_buy[name].itname, shop_buy[name].nb, shop_buy[name].price)
 			return
 		elseif fields["quit"] then
