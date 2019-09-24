@@ -1,6 +1,6 @@
-***MINERCANTILE***
+# Miner Cantile
 
-A minetest trading mod by crabman, under the original idea of Cyberpangolin
+A Minetest trading mod by crabman, under the original idea of Cyberpangolin.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,9 +17,9 @@ A minetest trading mod by crabman, under the original idea of Cyberpangolin
     
 
 
-PLEASE NOTE: THIS MOD (including this readme file) IS UNDER A HARD WORK AND NOT READY TO USE INGAME FOR NOW !
+PLEASE NOTE: THIS MOD (including this readme file) IS UNDER A HARD WORK AND NOT READY TO USE INGAME FOR NOW!
 
-
+## Usage
 
 This mod aims to make a big centralised store, under following conditions:
 - To have money, the player has to change the coins he finds naturally ingame at the bancomatic, and then it's stored into player's wallet. 10000 copper coin = 100 silver coins = 1 golden coin = 10000 coins in the wallet
