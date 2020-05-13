@@ -265,7 +265,7 @@ end
 
 -- sell fonction
 function minercantile.shop.get_buy_price(shop_type, itname)
-	local price = nil
+	local price
 	local money = minercantile.shop.get_money()
 	if not minercantile.stock.items[itname] then
 		minercantile.stock.items[itname] = {nb=0}
@@ -288,7 +288,7 @@ end
 
 -- sell fonction
 function minercantile.shop.get_sell_price(itname, wear)
-	local price = nil
+	local price
 	local money = minercantile.shop.get_money()
 	if not minercantile.stock.items[itname] then
 		minercantile.stock.items[itname] = {nb=0}
@@ -380,7 +380,6 @@ function minercantile.shop.buy(name, itname, nb, price)
 	local player = minetest.get_player_by_name(name)
 	if not player then return false end
 	local player_inv = player:get_inventory()
-	local shop_money = minercantile.shop.get_money()
 	local player_money = minercantile.wallet.get_money(name)
 	if player_money < 1 then
 		minetest.show_formspec(name, "minercantile:confirmed", "size[6,3]bgcolor[#2A2A2A;]label[2.6,0;Shop]label[1,1;Sorry, you have not enough money]button[1.3,2.1;1.5,1;return_buy;Return]button_exit[3.3,2.1;1.5,1;close;Close]")
@@ -466,7 +465,6 @@ end
 
 local function get_formspec_buy_items(name)
 	local itname = shop_buy[name].itname
-	local max = shop_buy[name].max
 	local nb = shop_buy[name].nb
 	local price = shop_buy[name].price
 	local formspec = {"size[8,6]bgcolor[#2A2A2A;]label[3.5,0;Buy Items]"}
@@ -610,7 +608,6 @@ local function get_formspec_sell_items(name)
 	local item = shop_sell[name].item
 	local itname = item.name
 	local index = shop_sell[name].index
-	local max = shop_sell[name].max
 	local nb = shop_sell[name].nb
 	local price = minercantile.shop.get_sell_price(itname, item.wear)
 	shop_sell[name].price = price
@@ -969,7 +966,7 @@ minetest.register_chatcommand("shop_additem",{
 			minetest.chat_send_player(name, "invalid param amount")
 			return
 		end
-		local amount = tonumber(amount)
+		amount = tonumber(amount)
 		if amount < 1 then
 			minetest.chat_send_player(name, "invalid param amount")
 			return
@@ -1001,7 +998,7 @@ minetest.register_chatcommand("shop_delitem",{
 			minetest.chat_send_player(name, "invalid param amount")
 			return
 		end
-		local amount = tonumber(amount)
+		amount = tonumber(amount)
 		if amount < 1 then
 			minetest.chat_send_player(name, "invalid param amount")
 			return

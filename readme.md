@@ -1,5 +1,7 @@
 # Miner Cantile
 
+[![Build Status](https://travis-ci.org/MinetestForFun/minercantile.svg)](https://travis-ci.org/MinetestForFun/minercantile)
+
 A Minetest trading mod by crabman, under the original idea of Cyberpangolin.
 
     This program is free software: you can redistribute it and/or modify

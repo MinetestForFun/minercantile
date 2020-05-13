@@ -5,7 +5,7 @@ function minercantile.wallet.load_wallet(name)
 	if minercantile.wallets[name] == nil then
 		minercantile.wallets[name] = {}
 	end
-	local file, err = io.open(minercantile.path_wallet..name, "r")
+	local file, _ = io.open(minercantile.path_wallet..name, "r")
 	if file then
 		local data = minetest.deserialize(file:read("*all"))
 		file:close()
